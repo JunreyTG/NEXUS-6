@@ -119,7 +119,7 @@ export type DatasetRecord = {
   name: string;
   description: string | null;
   originalFilename: string;
-  fileType: "CSV" | "JSON" | "XLSX";
+  fileType: "CSV" | "TSV" | "JSON" | "NDJSON" | "XML" | "XLSX";
   fileSizeBytes: number | string | null;
   detectedFields: string[];
   recordCount: number | string | null;

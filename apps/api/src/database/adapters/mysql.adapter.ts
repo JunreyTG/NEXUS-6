@@ -19,6 +19,7 @@ import type {
   UpdateRecordRequest
 } from "../types.js";
 import { UnconfiguredDatabaseAdapter } from "../unconfigured.adapter.js";
+import { buildReport, recordWithId, sortRecords, validateIdentifier } from "./relational-adapter.support.js";
 
 type StoredRow = RowDataPacket & { record_id: string; record_data: DatabaseRecord };
 
@@ -50,9 +51,10 @@ export class MySqlAdapter extends UnconfiguredDatabaseAdapter {
 
   override getSchema(request: StorageRequest): Promise<DatabaseSchema> {
     return this.read(async () => {
-      const rows = await this.rows(request.storageIdentifier);
+      const records = await this.rows(request.storageIdentifier);
       const fields = new Map<string, { name: string; type: string; nullable: boolean }>();
-      for (const row of rows.slice(0, 1000)) for (const [name, value] of Object.entries(row.record_data)) {
+      for (const record of records.slice(0, 1000)) for (const [name, value] of Object.entries(record)) {
+        if (name === "id") continue;
         const type = value === null ? "null" : Array.isArray(value) ? "array" : typeof value;
         const current = fields.get(name);
         fields.set(name, { name, type: current && current.type !== type ? "mixed" : type, nullable: current?.nullable === true || value === null });
@@ -63,12 +65,12 @@ export class MySqlAdapter extends UnconfiguredDatabaseAdapter {
 
   override listRecords(request: RecordListRequest): Promise<RecordPage> {
     return this.read(async () => {
-      let records = (await this.rows(request.storageIdentifier)).map((row) => recordWithId(row.record_id, row.record_data));
+      let records = await this.rows(request.storageIdentifier);
       if (request.search) {
         const search = request.search.toLowerCase();
         records = records.filter((record) => JSON.stringify(record).toLowerCase().includes(search));
       }
-      if (request.sortBy) records.sort((left, right) => compare(getField(left, request.sortBy!), getField(right, request.sortBy!)) * (request.sortDirection === "desc" ? -1 : 1));
+      records = sortRecords(records, request.sortBy, request.sortDirection);
       const start = (request.page - 1) * request.pageSize;
       return { items: records.slice(start, start + request.pageSize), page: request.page, pageSize: request.pageSize, total: records.length };
     });
@@ -79,7 +81,7 @@ export class MySqlAdapter extends UnconfiguredDatabaseAdapter {
       const table = identifier(request.storageIdentifier);
       const [rows] = await this.getPool().execute<StoredRow[]>(`SELECT record_id, record_data FROM ${table} WHERE record_id = ? LIMIT 1`, [request.recordId]);
       const row = rows[0];
-      return row ? { id: row.record_id, ...row.record_data } : null;
+      return row ? recordWithId(row.record_id, row.record_data) : null;
     });
   }
 
@@ -117,9 +119,9 @@ export class MySqlAdapter extends UnconfiguredDatabaseAdapter {
     });
   }
 
-  private async rows(storageIdentifier: string): Promise<StoredRow[]> {
+  private async rows(storageIdentifier: string): Promise<DatabaseRecord[]> {
     const [rows] = await this.getPool().execute<StoredRow[]>(`SELECT record_id, record_data FROM ${identifier(storageIdentifier)} ORDER BY created_at ASC, record_id ASC`);
-    return rows;
+    return rows.map((row) => recordWithId(row.record_id, row.record_data));
   }
 
   private getPool(): Pool {
@@ -140,8 +142,7 @@ export class MySqlAdapter extends UnconfiguredDatabaseAdapter {
 }
 
 function identifier(value: string): string {
-  if (!/^[A-Za-z0-9_]+$/.test(value) || value.length > 190) throw new Error("Invalid storage identifier.");
-  return `\`${value}\``;
+  return `\`${validateIdentifier(value)}\``;
 }
 
 function descriptor(storageIdentifier: string, databaseName: string | undefined): StorageDescriptor {
@@ -152,58 +153,4 @@ function recordIdentifier(record: DatabaseRecord): string {
   const value = record.id;
   if (typeof value !== "string" || !/^[A-Za-z0-9_.:-]{1,191}$/.test(value)) throw new Error("Record id is required.");
   return value;
-}
-
-function getField(record: DatabaseRecord, path: string): unknown {
-  return path.split(".").reduce<unknown>((value, key) => value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>)[key] : undefined, record);
-}
-
-function compare(left: unknown, right: unknown): number {
-  if (left === right) return 0;
-  if (left === undefined || left === null) return -1;
-  if (right === undefined || right === null) return 1;
-  return String(left).localeCompare(String(right), undefined, { numeric: true });
-}
-
-function buildReport(rows: StoredRow[], plan: ReportQueryRequest["plan"]): ReportQueryResult {
-  const records = rows.map((row) => recordWithId(row.record_id, row.record_data)).filter((record) => plan.filters.every((filter) => matches(getField(record, filter.field), filter.operator, filter.value)));
-  if (plan.grouping.length) {
-    const groups = new Map<string, DatabaseRecord[]>();
-    for (const record of records) {
-      const key = JSON.stringify(plan.grouping.map((field) => getField(record, field)));
-      groups.set(key, [...(groups.get(key) ?? []), record]);
-    }
-    const resultRows = [...groups.values()].map((group) => ({ ...Object.fromEntries(plan.grouping.map((field) => [field, getField(group[0]!, field)])), ...aggregate(group, plan.aggregates) }) as DatabaseRecord);
-    return { columns: [...plan.grouping, ...plan.aggregates.map((item) => item.alias)], rows: resultRows };
-  }
-  if (plan.aggregates.length) return { columns: [...plan.selectedFields, ...plan.aggregates.map((item) => item.alias)], rows: [{ ...Object.fromEntries(plan.selectedFields.map((field) => [field, getField(records[0] ?? {}, field)])), ...aggregate(records, plan.aggregates) } as DatabaseRecord] };
-  const fields = plan.selectedFields.length ? plan.selectedFields : [...new Set(records.flatMap((record) => Object.keys(record)))];
-  return { columns: fields, rows: records.map((record) => Object.fromEntries(fields.map((field) => [field, getField(record, field)])) as DatabaseRecord) };
-}
-
-function recordWithId(id: string, record: DatabaseRecord): DatabaseRecord {
-  return { id, ...record };
-}
-
-function aggregate(records: DatabaseRecord[], aggregates: ReportQueryRequest["plan"]["aggregates"]): DatabaseRecord {
-  return Object.fromEntries(aggregates.map((item) => {
-    const values = item.field ? records.map((record) => getField(record, item.field!)).filter((value): value is number => typeof value === "number") : [];
-    if (item.operation === "COUNT") return [item.alias, records.length];
-    if (!values.length) return [item.alias, null];
-    if (item.operation === "SUM") return [item.alias, values.reduce((sum, value) => sum + value, 0)];
-    if (item.operation === "AVG") return [item.alias, values.reduce((sum, value) => sum + value, 0) / values.length];
-    return [item.alias, item.operation === "MIN" ? Math.min(...values) : Math.max(...values)];
-  }));
-}
-
-function matches(actual: unknown, operator: string, expected: unknown): boolean {
-  if (operator === "eq") return actual === expected;
-  if (operator === "neq") return actual !== expected;
-  if (operator === "contains") return typeof actual === "string" && actual.toLowerCase().includes(String(expected).toLowerCase());
-  if (operator === "in") return Array.isArray(expected) && expected.includes(actual);
-  if (operator === "gt") return typeof actual === "number" && actual > Number(expected);
-  if (operator === "gte") return typeof actual === "number" && actual >= Number(expected);
-  if (operator === "lt") return typeof actual === "number" && actual < Number(expected);
-  if (operator === "lte") return typeof actual === "number" && actual <= Number(expected);
-  return false;
 }

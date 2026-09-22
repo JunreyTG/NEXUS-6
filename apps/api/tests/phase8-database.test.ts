@@ -6,7 +6,7 @@ import { DatabaseNotConfiguredError, UnsupportedDatabaseEngineError } from "../s
 import { ENGINE_CAPABILITIES } from "../src/database/capabilities.js";
 import { DatabaseRouter } from "../src/database/router.js";
 import { generateStorageIdentifier } from "../src/database/storage-naming.js";
-import { DATABASE_ENGINES } from "../src/database/types.js";
+import { DATABASE_ENGINES, type DatabaseEngine } from "../src/database/types.js";
 import { MongoDbAdapter } from "../src/database/adapters/mongo-db.adapter.js";
 import { MySqlAdapter } from "../src/database/adapters/mysql.adapter.js";
 import { PostgresAdapter } from "../src/database/adapters/postgres.adapter.js";
@@ -47,7 +47,9 @@ describe("Phase 8 database abstraction", () => {
   it("rejects unsupported engines and does not fake adapter operations", async () => {
     const router = new DatabaseRouter();
     expect(() => router.getAdapter("ORACLE")).toThrowError(UnsupportedDatabaseEngineError);
-    for (const engine of DATABASE_ENGINES) await expect(router.getAdapter(engine).healthCheck()).resolves.toEqual({ engine, status: engine === "MYSQL" && getDatasetDatabaseConfig().MYSQL.configured ? "configured" : "not_configured" });
+    const config = getDatasetDatabaseConfig();
+    const implemented: DatabaseEngine[] = ["MYSQL", "POSTGRESQL", "SQLSERVER"];
+    for (const engine of DATABASE_ENGINES) await expect(router.getAdapter(engine).healthCheck()).resolves.toEqual({ engine, status: implemented.includes(engine) && config[engine].configured ? "configured" : "not_configured" });
     await expect(router.getAdapter("MONGODB").createStorage({ ownerAdminId: "admin", datasetId: "dataset", storageIdentifier: "safe" })).rejects.toMatchObject({ code: "DATABASE_NOT_CONFIGURED" });
     await expect(router.getAdapter("MONGODB").createStorage({ ownerAdminId: "admin", datasetId: "dataset", storageIdentifier: "safe" })).rejects.toBeInstanceOf(DatabaseNotConfiguredError);
   });
@@ -59,8 +61,8 @@ describe("Phase 8 database abstraction", () => {
     expect(first).toBe(generateStorageIdentifier("Admin/one; DROP TABLE", "Dataset ../one"));
     expect(first).toMatch(/^admin_[a-z0-9_]+_dataset_[a-z0-9_]+$/);
     expect(first).not.toMatch(/[;/'" ]/);
-    expect(first.length).toBeLessThanOrEqual(128);
-    expect(generateStorageIdentifier({ ownerAdminId: "a".repeat(300), datasetId: "b".repeat(300) }).length).toBeLessThanOrEqual(128);
+    expect(first.length).toBeLessThanOrEqual(63);
+    expect(generateStorageIdentifier({ ownerAdminId: "a".repeat(300), datasetId: "b".repeat(300) }).length).toBeLessThanOrEqual(63);
   });
 
   it("does not create DatasetLocation after an unconfigured storage failure", async () => {
@@ -70,7 +72,8 @@ describe("Phase 8 database abstraction", () => {
       getLocation: async () => null,
       createLocation: async (datasetId: string, descriptor: unknown) => { locations.push({ datasetId, descriptor }); }
     } as unknown as DatasetRepository;
-    const service = new DatasetStorageService({ datasets: repository });
+    const router = new DatabaseRouter({ POSTGRESQL: new PostgresAdapter(getDatasetDatabaseConfig({}).POSTGRESQL) });
+    const service = new DatasetStorageService({ datasets: repository, router });
     await expect(service.createStorage("dataset-id")).rejects.toBeInstanceOf(DatabaseNotConfiguredError);
     expect(locations).toHaveLength(0);
   });

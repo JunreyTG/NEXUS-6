@@ -212,7 +212,7 @@ export function DatasetUploadPage() {
         <label className="block text-sm text-slate-300">
           File
           <input
-            accept=".csv,.json,.xlsx"
+            accept=".csv,.tsv,.json,.ndjson,.jsonl,.xml,.xlsx"
             className="mt-2 block w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white"
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             required
@@ -437,7 +437,17 @@ export function DatasetDetailPage() {
               </div>
               <p className="mt-5 text-sm text-slate-500">Compatible Databases</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {compatibleEngines.map((engine) => <span className="rounded border border-cyan-300/20 px-3 py-1 text-sm text-cyan-200" key={engine}>{engineLabel(engine)}{engine === recommendedEngine ? " • Recommended" : " • Compatible"}</span>)}
+                {compatibleEngines.map((engine) => (
+                  <button
+                    className={`rounded border px-3 py-1 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${engine === selectedEngine ? "border-emerald-300/60 bg-emerald-400/10 text-emerald-200" : "border-cyan-300/20 text-cyan-200 hover:border-cyan-300/50 hover:text-white"}`}
+                    disabled={storage.data?.configured || createStorage.isPending}
+                    key={engine}
+                    onClick={() => setSelectedEngineOverride(engine)}
+                    type="button"
+                  >
+                    {engineLabel(engine)}{engine === recommendedEngine ? " • Recommended" : " • Compatible"}
+                  </button>
+                ))}
               </div>
               <label className="mt-5 block text-sm text-slate-300">Selected Database<select className="mt-2 w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white sm:max-w-md" disabled={storage.data?.configured || createStorage.isPending} onChange={(event) => setSelectedEngineOverride(event.target.value)} value={selectedEngine ?? ""}><option disabled value="">Choose a compatible database</option>{compatibleEngines.map((engine) => <option key={engine} value={engine}>{engineLabel(engine)}</option>)}</select></label>
               <button className="mt-5 rounded bg-emerald-300 px-4 py-2 font-semibold text-slate-950 disabled:opacity-50" disabled={!selectedEngine || storage.data?.configured || createStorage.isPending} onClick={() => void createStorage.mutateAsync()} type="button">{createStorage.isPending ? "Creating Storage..." : "Create Dataset Storage"}</button>

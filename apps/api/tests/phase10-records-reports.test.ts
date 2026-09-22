@@ -7,6 +7,13 @@ import type { ReportRepository } from "../src/repositories/report.repository.js"
 import type { ActivityLogger, LogRecordInput, PaginatedLogs } from "../src/logging/types.js";
 import { recordsQuerySchema } from "../src/routes/dataset.routes.js";
 import { reportCreateSchema } from "../src/reports/schema.js";
+import { DatabaseRouter } from "../src/database/router.js";
+import { PostgresAdapter } from "../src/database/adapters/postgres.adapter.js";
+import { getDatasetDatabaseConfig } from "../src/config/dataset-databases.js";
+
+function unconfiguredPostgresRouter(): DatabaseRouter {
+  return new DatabaseRouter({ POSTGRESQL: new PostgresAdapter(getDatasetDatabaseConfig({}).POSTGRESQL) });
+}
 
 const ownerId = "11111111-1111-4111-8111-111111111111";
 const otherOwnerId = "22222222-2222-4222-8222-222222222222";
@@ -57,7 +64,7 @@ const reportRow = {
 
 describe("Phase 10 record management", () => {
   it("enforces ownership and routes owned records through the unconfigured adapter", async () => {
-    const service = new DatasetRecordService({ datasets: recordRepository() });
+    const service = new DatasetRecordService({ datasets: recordRepository(), router: unconfiguredPostgresRouter() });
     await expect(service.list(datasetId, { page: 1, pageSize: 25 }, otherAdmin)).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(service.list(datasetId, { page: 2, pageSize: 50 }, admin)).rejects.toBeInstanceOf(DatabaseNotConfiguredError);
     await expect(service.list(datasetId, { page: 1, pageSize: 25 }, superAdmin)).rejects.toBeInstanceOf(DatabaseNotConfiguredError);
@@ -107,7 +114,7 @@ describe("Phase 10 reports", () => {
   it("does not produce fake preview data when the adapter is unconfigured", async () => {
     const reportRepository = { findById: async () => reportRow, findOwnedById: async () => reportRow } as unknown as ReportRepository;
     const datasets = { findById: async () => dataset(), getLocation: async () => ({ storageIdentifier: "safe", engine: "POSTGRESQL" }), getAnalysis: async () => null } as unknown as DatasetRepository;
-    const service = new ReportService({ reports: reportRepository, datasets });
+    const service = new ReportService({ reports: reportRepository, datasets, router: unconfiguredPostgresRouter() });
     await expect(service.preview(reportId, admin)).rejects.toBeInstanceOf(DatabaseNotConfiguredError);
   });
 });

@@ -9,10 +9,15 @@ import { TemporaryUploadStorage } from "../uploads/storage.js";
 import { DatasetStorageService } from "../services/dataset-storage.service.js";
 import { DATABASE_ENGINES } from "../database/types.js";
 import { DatasetRecordService } from "../services/dataset-record.service.js";
+import type { DatasetFileType } from "../uploads/parsers.js";
 
-const mimeTypes: Record<string, { type: "CSV" | "JSON" | "XLSX"; mime: string[] }> = {
+const mimeTypes: Record<string, { type: DatasetFileType; mime: string[] }> = {
   csv: { type: "CSV", mime: ["text/csv", "application/csv", "text/plain"] },
+  tsv: { type: "TSV", mime: ["text/tab-separated-values", "text/tsv", "text/plain"] },
   json: { type: "JSON", mime: ["application/json", "text/json"] },
+  ndjson: { type: "NDJSON", mime: ["application/x-ndjson", "application/jsonlines", "application/jsonl", "text/plain"] },
+  jsonl: { type: "NDJSON", mime: ["application/x-ndjson", "application/jsonlines", "application/jsonl", "text/plain"] },
+  xml: { type: "XML", mime: ["application/xml", "text/xml"] },
   xlsx: { type: "XLSX", mime: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"] }
 };
 
@@ -50,7 +55,7 @@ function actor(request: Request): DatasetActor {
   };
 }
 
-export function detectUploadFileType(filename: string, mimetype: string): { extension: string; type: "CSV" | "JSON" | "XLSX" } {
+export function detectUploadFileType(filename: string, mimetype: string): { extension: string; type: DatasetFileType } {
   if (filename.includes("\u0000") || filename.includes("/") || filename.includes("\\") || filename.length > 255) throw new UploadValidationError("FILENAME_INVALID");
   const extension = filename.split(".").pop()?.toLowerCase() ?? "";
   const match = mimeTypes[extension];

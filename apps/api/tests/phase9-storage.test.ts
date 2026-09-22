@@ -8,6 +8,8 @@ import { DatabaseNotConfiguredError, DatasetNotAnalyzedError, IncompatibleDataba
 import { createApp } from "../src/app.js";
 import { DatabaseRouter } from "../src/database/router.js";
 import { MySqlAdapter } from "../src/database/adapters/mysql.adapter.js";
+import { PostgresAdapter } from "../src/database/adapters/postgres.adapter.js";
+import { SqlServerAdapter } from "../src/database/adapters/sql-server.adapter.js";
 import { getDatasetDatabaseConfig } from "../src/config/dataset-databases.js";
 
 const ownerId = "11111111-1111-4111-8111-111111111111";
@@ -47,7 +49,13 @@ function createStorageFixture(overrides: Record<string, unknown> = {}) {
     createLocation: async (id: string, descriptor: unknown) => { locations.push({ id, descriptor }); return { id: "location-id", datasetId: id, ...(descriptor as object) }; },
     markStorageReady: async () => undefined
   } as unknown as DatasetRepository;
-  return { service: new DatasetStorageService({ datasets: repository, router: new DatabaseRouter({ MYSQL: new MySqlAdapter(getDatasetDatabaseConfig({}).MYSQL) }) }), locations };
+  const unconfigured = getDatasetDatabaseConfig({});
+  const router = new DatabaseRouter({
+    MYSQL: new MySqlAdapter(unconfigured.MYSQL),
+    POSTGRESQL: new PostgresAdapter(unconfigured.POSTGRESQL),
+    SQLSERVER: new SqlServerAdapter(unconfigured.SQLSERVER)
+  });
+  return { service: new DatasetStorageService({ datasets: repository, router }), locations };
 }
 
 describe("dataset storage workflow", () => {

@@ -16,8 +16,11 @@ export function generateStorageIdentifier(inputOrOwner: StorageIdentifierInput |
   const input = typeof inputOrOwner === "string" ? { ownerAdminId: inputOrOwner, datasetId: datasetId ?? "" } : inputOrOwner;
   const owner = normalizeIdentifier(input.ownerAdminId);
   const dataset = normalizeIdentifier(input.datasetId);
+  // MySQL table identifiers are capped at 64 characters, the strictest limit among the
+  // supported relational engines (PostgreSQL 63, SQL Server 128) - stay under that everywhere.
+  const MAX_LENGTH = 63;
   const base = `admin_${owner}_dataset_${dataset}`;
-  if (base.length <= 128) return base;
+  if (base.length <= MAX_LENGTH) return base;
   const digest = createHash("sha256").update(`${input.ownerAdminId}\0${input.datasetId}`).digest("hex").slice(0, 12);
-  return `admin_${owner.slice(0, 40)}_dataset_${dataset.slice(0, 40)}_${digest}`.slice(0, 128);
+  return `admin_${owner.slice(0, 17)}_dataset_${dataset.slice(0, 18)}_${digest}`.slice(0, MAX_LENGTH);
 }

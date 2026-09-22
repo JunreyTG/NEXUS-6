@@ -57,6 +57,43 @@ describe("dataset analysis", () => {
     }
   });
 
+  it("classifies TSV data the same way as equivalent CSV data", async () => {
+    const file = await temporaryFile("tsv", "id\tname\tage\n1\tAlice\t30\n2\tBob\t\n");
+    try {
+      const result = await new DatasetAnalyzer().analyze(file.filePath, "TSV");
+      expect(result.classification).toBe("RELATIONAL");
+      expect(result.characteristics.candidateIds).toContain("id");
+      expect(result.characteristics.fields.find((field) => field.name === "age")?.nullPercentage).toBe(50);
+    } finally {
+      await rm(file.directory, { recursive: true, force: true });
+    }
+  });
+
+  it("analyzes newline-delimited JSON records", async () => {
+    const file = await temporaryFile("ndjson", [
+      JSON.stringify({ id: "a", value: 1 }),
+      JSON.stringify({ id: "b", value: 2 })
+    ].join("\n"));
+    try {
+      const result = await new DatasetAnalyzer().analyze(file.filePath, "NDJSON");
+      expect(result.characteristics.recordCount).toBe(2);
+      expect(result.characteristics.candidateIds).toContain("id");
+    } finally {
+      await rm(file.directory, { recursive: true, force: true });
+    }
+  });
+
+  it("analyzes XML records nested under a repeated element", async () => {
+    const file = await temporaryFile("xml", "<rows><row><id>1</id><name>Alice</name></row><row><id>2</id><name>Bob</name></row></rows>");
+    try {
+      const result = await new DatasetAnalyzer().analyze(file.filePath, "XML");
+      expect(result.characteristics.recordCount).toBe(2);
+      expect(result.characteristics.candidateIds).toContain("id");
+    } finally {
+      await rm(file.directory, { recursive: true, force: true });
+    }
+  });
+
   it("analyzes XLSX without persisting source contents", async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Data");

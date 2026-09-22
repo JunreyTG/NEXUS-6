@@ -4,10 +4,14 @@ import { AdminRepository } from "../repositories/admin.repository.js";
 import { DatasetRepository } from "../repositories/dataset.repository.js";
 import { LogService } from "../logging/log.service.js";
 import type { ActivityLogger, LogActor } from "../logging/types.js";
-import { parseDatasetFile, type ParsedDataset } from "../uploads/parsers.js";
+import { DATASET_FILE_TYPES, parseDatasetFile, type DatasetFileType, type ParsedDataset } from "../uploads/parsers.js";
 import { TemporaryUploadStorage } from "../uploads/storage.js";
 import { DatasetAnalyzer } from "../analysis/analyzer.js";
 import type { AnalysisResult } from "../analysis/types.js";
+
+function isDatasetFileType(value: string | null | undefined): value is DatasetFileType {
+  return (DATASET_FILE_TYPES as readonly string[]).includes(value ?? "");
+}
 
 export type DatasetActor = LogActor & {
   role: "ADMIN" | "SUPER_ADMIN";
@@ -149,7 +153,7 @@ export class DatasetService {
     const dataset = await this.authorize(id, actor);
     const fileType = dataset.fileType;
     const temporaryFileKey = dataset.temporaryFileKey;
-    if ((fileType !== "CSV" && fileType !== "JSON" && fileType !== "XLSX") || !temporaryFileKey) throw new UploadValidationError("ANALYSIS_FILE_UNAVAILABLE");
+    if (!isDatasetFileType(fileType) || !temporaryFileKey) throw new UploadValidationError("ANALYSIS_FILE_UNAVAILABLE");
     await this.datasets.beginAnalysis(id);
     await this.recordActivity({ ...actor, action: "DATASET_ANALYSIS_STARTED", resourceType: "DATASET", resourceId: id, success: true });
     try {

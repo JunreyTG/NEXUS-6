@@ -1,3 +1,5 @@
+import type { DatasetFileType } from "../uploads/parsers.js";
+
 export const DATABASE_ENGINES = ["MONGODB", "MYSQL", "POSTGRESQL", "COUCHBASE", "NEO4J", "SQLSERVER"] as const;
 
 export type DatabaseEngine = (typeof DATABASE_ENGINES)[number];
@@ -26,7 +28,7 @@ export type StorageDescriptor = {
 
 export type ImportDatasetRequest = StorageRequest & {
   sourceFileKey: string;
-  fileType: "CSV" | "JSON" | "XLSX";
+  fileType: DatasetFileType;
 };
 
 export type ImportDatasetResult = {

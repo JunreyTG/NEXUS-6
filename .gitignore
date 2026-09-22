@@ -22,7 +22,6 @@ build/
 coverage/
 
 # Temporary uploads and scratch
-uploads/
 apps/api/var/uploads/
 tmp/
 temp/

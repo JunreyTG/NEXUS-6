@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
-import ExcelJS from "exceljs";
 import { UploadValidationError } from "../errors/app-error.js";
+import { loadXlsxWorkbook, parseDelimitedRows, parseJsonRecords, parseNdjsonRecords, parseXmlRecords } from "../uploads/dataset-formats.js";
+import type { DatasetFileType } from "../uploads/parsers.js";
 import { RecommendationService } from "./recommendation.service.js";
 import type { AnalysisResult, DatasetCharacteristics, FieldAnalysis } from "./types.js";
 
@@ -28,69 +29,46 @@ function typeOfValue(value: unknown): string {
   return "string";
 }
 
-function csvRows(text: string): string[][] {
-  if (!text.trim()) throw new UploadValidationError("EMPTY_FILE");
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let cell = "";
-  let quoted = false;
-  for (let index = 0; index < text.length; index += 1) {
-    const character = text[index];
-    if (character === '"') {
-      if (quoted && text[index + 1] === '"') { cell += '"'; index += 1; } else quoted = !quoted;
-    } else if (character === "," && !quoted) { row.push(cell); cell = ""; }
-    else if ((character === "\n" || character === "\r") && !quoted) {
-      if (character === "\r" && text[index + 1] === "\n") index += 1;
-      row.push(cell);
-      if (row.some((value) => value.trim())) rows.push(row);
-      row = []; cell = "";
-    } else cell += character;
-  }
-  if (quoted) throw new UploadValidationError("MALFORMED_FILE");
-  if (cell || row.length) { row.push(cell); if (row.some((value) => value.trim())) rows.push(row); }
-  if (!rows.length) throw new UploadValidationError("EMPTY_FILE");
-  return rows;
+function delimitedToRecords(rows: string[][]): { records: RecordValue[]; recordCount: number } {
+  const fields = rows[0]!.map((field, index) => field.trim() || `column_${index + 1}`);
+  const records = rows.slice(1, MAX_ANALYZED_RECORDS + 1).map((row) => Object.fromEntries(fields.map((field, index) => [field, row[index] ?? null])));
+  return { records, recordCount: Math.max(0, rows.length - 1) };
 }
 
-function parseJsonRecords(text: string): RecordValue[] {
-  if (!text.trim()) throw new UploadValidationError("EMPTY_FILE");
-  let value: unknown;
-  try { value = JSON.parse(text); } catch { throw new UploadValidationError("MALFORMED_FILE"); }
-  if (Array.isArray(value)) return value.filter((item): item is RecordValue => Boolean(item && typeof item === "object" && !Array.isArray(item))).slice(0, MAX_ANALYZED_RECORDS);
-  if (value && typeof value === "object" && !Array.isArray(value)) return [value as RecordValue];
-  throw new UploadValidationError("MALFORMED_FILE");
-}
-
-async function readRecords(filePath: string, fileType: "CSV" | "JSON" | "XLSX"): Promise<{ records: RecordValue[]; recordCount: number }> {
+async function readRecords(filePath: string, fileType: DatasetFileType): Promise<{ records: RecordValue[]; recordCount: number }> {
   const buffer = await readFile(filePath);
   if (!buffer.length) throw new UploadValidationError("EMPTY_FILE");
+  if (fileType === "XLSX") {
+    const workbook = await loadXlsxWorkbook(buffer);
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet || worksheet.rowCount < 1) throw new UploadValidationError("EMPTY_FILE");
+    const fields = (worksheet.getRow(1).values as unknown[]).slice(1).map((field, index) => String(field ?? "").trim() || `column_${index + 1}`);
+    const records: RecordValue[] = [];
+    let recordCount = 0;
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber <= 1 || recordCount >= MAX_ANALYZED_RECORDS) return;
+      const values = row.values as unknown as unknown[];
+      if (!values.some((value) => value !== null && value !== undefined && String(value).trim() !== "")) return;
+      recordCount += 1;
+      records.push(Object.fromEntries(fields.map((field, index) => [field, values[index + 1] ?? null])));
+    });
+    let totalCount = 0;
+    worksheet.eachRow((row, rowNumber) => { if (rowNumber > 1 && (row.values as unknown as unknown[]).some((value) => value !== null && value !== undefined && String(value).trim() !== "")) totalCount += 1; });
+    return { records, recordCount: totalCount };
+  }
+  const text = buffer.toString("utf8");
+  if (fileType === "CSV") return delimitedToRecords(parseDelimitedRows(text, ","));
+  if (fileType === "TSV") return delimitedToRecords(parseDelimitedRows(text, "\t"));
   if (fileType === "JSON") {
-    const records = parseJsonRecords(buffer.toString("utf8"));
-    return { records, recordCount: records.length };
+    const all = parseJsonRecords(text);
+    return { records: all.slice(0, MAX_ANALYZED_RECORDS), recordCount: all.length };
   }
-  if (fileType === "CSV") {
-    const rows = csvRows(buffer.toString("utf8"));
-    const fields = rows[0]!.map((field, index) => field.trim() || `column_${index + 1}`);
-    const records = rows.slice(1, MAX_ANALYZED_RECORDS + 1).map((row) => Object.fromEntries(fields.map((field, index) => [field, row[index] ?? null])));
-    return { records, recordCount: Math.max(0, rows.length - 1) };
+  if (fileType === "NDJSON") {
+    const all = parseNdjsonRecords(text);
+    return { records: all.slice(0, MAX_ANALYZED_RECORDS), recordCount: all.length };
   }
-  const workbook = new ExcelJS.Workbook();
-  try { await workbook.xlsx.load(buffer as unknown as Parameters<ExcelJS.Workbook["xlsx"]["load"]>[0]); } catch { throw new UploadValidationError("MALFORMED_FILE"); }
-  const worksheet = workbook.worksheets[0];
-  if (!worksheet || worksheet.rowCount < 1) throw new UploadValidationError("EMPTY_FILE");
-  const fields = (worksheet.getRow(1).values as unknown[]).slice(1).map((field, index) => String(field ?? "").trim() || `column_${index + 1}`);
-  const records: RecordValue[] = [];
-  let recordCount = 0;
-  worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber <= 1 || recordCount >= MAX_ANALYZED_RECORDS) return;
-    const values = row.values as unknown as unknown[];
-    if (!values.some((value) => value !== null && value !== undefined && String(value).trim() !== "")) return;
-    recordCount += 1;
-    records.push(Object.fromEntries(fields.map((field, index) => [field, values[index + 1] ?? null])));
-  });
-  let totalCount = 0;
-  worksheet.eachRow((row, rowNumber) => { if (rowNumber > 1 && (row.values as unknown as unknown[]).some((value) => value !== null && value !== undefined && String(value).trim() !== "")) totalCount += 1; });
-  return { records, recordCount: totalCount };
+  const all = parseXmlRecords(text);
+  return { records: all.slice(0, MAX_ANALYZED_RECORDS), recordCount: all.length };
 }
 
 function addField(state: Map<string, FieldState>, name: string, value: unknown, recordIndex: number, nestedFields: Set<string>, arrayFields: Set<string>, maxDepth: { value: number }): void {
@@ -128,7 +106,7 @@ function classify(characteristics: DatasetCharacteristics): AnalysisResult["clas
 export class DatasetAnalyzer {
   constructor(private readonly recommendation = new RecommendationService()) {}
 
-  async analyze(filePath: string, fileType: "CSV" | "JSON" | "XLSX"): Promise<AnalysisResult> {
+  async analyze(filePath: string, fileType: DatasetFileType): Promise<AnalysisResult> {
     const { records, recordCount } = await readRecords(filePath, fileType);
     if (!recordCount || !records.length) throw new UploadValidationError("EMPTY_FILE");
     const state = new Map<string, FieldState>();
