@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/log-prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LogActorType {
+  ADMIN
+  SUPER_ADMIN
+  SYSTEM
+  ANONYMOUS
+}
+
+model LoginLog {
+  id         String       @id @default(uuid()) @db.Uuid
+  timestamp  DateTime     @default(now()) @db.Timestamptz(3)
+  actorType  LogActorType
+  actorId    String?      @db.Uuid
+  actorEmail String?
+  action     String
+  success    Boolean
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json         @default("{}")
+  errorCode  String?
+
+  @@index([timestamp])
+  @@index([actorEmail, timestamp])
+  @@index([action, timestamp])
+  @@index([success, timestamp])
+}
+
+model AuditLog {
+  id           String       @id @default(uuid()) @db.Uuid
+  timestamp    DateTime     @default(now()) @db.Timestamptz(3)
+  actorType    LogActorType
+  actorId      String?      @db.Uuid
+  actorEmail   String?
+  action       String
+  resourceType String?
+  resourceId   String?      @db.Uuid
+  success      Boolean
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json         @default("{}")
+  errorCode    String?
+
+  @@index([timestamp])
+  @@index([actorEmail, timestamp])
+  @@index([action, timestamp])
+  @@index([resourceType, resourceId, timestamp])
+  @@index([success, timestamp])
+}
+
+model SecurityEvent {
+  id           String       @id @default(uuid()) @db.Uuid
+  timestamp    DateTime     @default(now()) @db.Timestamptz(3)
+  actorType    LogActorType
+  actorId      String?      @db.Uuid
+  actorEmail   String?
+  action       String
+  resourceType String?
+  resourceId   String?      @db.Uuid
+  success      Boolean
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json         @default("{}")
+  errorCode    String?
+
+  @@index([timestamp])
+  @@index([actorEmail, timestamp])
+  @@index([action, timestamp])
+  @@index([success, timestamp])
+}
+
+model DatasetActivityLog {
+  id           String       @id @default(uuid()) @db.Uuid
+  timestamp    DateTime     @default(now()) @db.Timestamptz(3)
+  actorType    LogActorType
+  actorId      String?      @db.Uuid
+  actorEmail   String?
+  action       String
+  resourceType String?
+  resourceId   String?      @db.Uuid
+  success      Boolean
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json         @default("{}")
+  errorCode    String?
+
+  @@index([timestamp])
+  @@index([actorEmail, timestamp])
+  @@index([action, timestamp])
+  @@index([resourceType, resourceId, timestamp])
+  @@index([success, timestamp])
+}
+
+model DatabaseActivityLog {
+  id           String       @id @default(uuid()) @db.Uuid
+  timestamp    DateTime     @default(now()) @db.Timestamptz(3)
+  actorType    LogActorType
+  actorId      String?      @db.Uuid
+  actorEmail   String?
+  action       String
+  resourceType String?
+  resourceId   String?      @db.Uuid
+  success      Boolean
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json         @default("{}")
+  errorCode    String?
+
+  @@index([timestamp])
+  @@index([actorEmail, timestamp])
+  @@index([action, timestamp])
+  @@index([resourceType, resourceId, timestamp])
+  @@index([success, timestamp])
+}

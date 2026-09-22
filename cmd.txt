@@ -1,0 +1,11 @@
+Terminal 1: Backend
+cd C:\Users\junei\NEXUS-6\apps\api
+npm run dev
+================================================================
+http://localhost:4000/api/health
+
+Terminal 2: Frontend
+cd C:\Users\junei\NEXUS-6\apps\web
+npm run dev
+================================================================
+http://localhost:8080

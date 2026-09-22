@@ -1,0 +1,53 @@
+{
+    "name": "@nexus-6/api",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "lint": "eslint .",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "build": "tsc -p tsconfig.json",
+        "prisma:generate": "prisma generate && prisma generate --config prisma.log.config.ts",
+        "prisma:migrate": "prisma migrate deploy",
+        "prisma:status": "prisma migrate status",
+        "prisma:log:migrate": "prisma migrate deploy --config prisma.log.config.ts",
+        "prisma:log:status": "prisma migrate status --config prisma.log.config.ts",
+        "predev": "npm run prisma:generate",
+        "prebuild": "npm run prisma:generate"
+    },
+    "dependencies": {
+        "@prisma/adapter-pg": "^7.10.0",
+        "@prisma/client": "^7.10.0",
+        "argon2": "^0.44.0",
+        "bcrypt": "^6.0.0",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.7",
+        "exceljs": "^4.4.0",
+        "express": "^4.21.2",
+        "express-rate-limit": "^7.5.0",
+        "helmet": "^8.0.0",
+        "jose": "^6.1.0",
+        "multer": "^2.4.0",
+        "zod": "^3.24.1"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.37.0",
+        "@types/cookie-parser": "^1.4.9",
+        "@types/cors": "^2.8.17",
+        "@types/express": "^4.17.21",
+        "@types/multer": "^2.2.0",
+        "@types/node": "^22.10.2",
+        "@types/supertest": "^6.0.2",
+        "eslint": "^9.37.0",
+        "globals": "^16.4.0",
+        "prisma": "^7.10.0",
+        "supertest": "^7.0.0",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.2",
+        "typescript-eslint": "^8.46.0",
+        "vitest": "^2.1.8"
+    }
+}

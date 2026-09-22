@@ -1,0 +1,800 @@
+openapi: 3.1.0
+info:
+  title: NEXUS-6 API
+  version: 0.5.0
+  description: Phase 5 REST API contract for NEXUS-6.
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      responses:
+        "200":
+          description: API is online.
+          content:
+            application/json:
+               schema:
+                 type: object
+                 required:
+                   - status
+                   - service
+                 properties:
+                   status:
+                     type: string
+                     const: ok
+                   service:
+                     type: string
+                     const: nexus-6-api
+  /api/health/database:
+    get:
+      summary: System database health check
+      operationId: getSystemDatabaseHealth
+      responses:
+        "200":
+          description: System database is available.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseHealth"
+        "503":
+          description: System database is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseHealth"
+  /api/auth/login:
+    post:
+      summary: Authenticate an administrator
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authentication succeeded. The refresh token is issued as an HttpOnly cookie.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid request.
+        "401":
+          description: Invalid credentials.
+  /api/auth/refresh:
+    post:
+      summary: Rotate the refresh session
+      operationId: refreshAuthentication
+      responses:
+        "200":
+          description: Refresh succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Refresh session is invalid or revoked.
+  /api/auth/logout:
+    post:
+      summary: Revoke the refresh session
+      operationId: logout
+      responses:
+        "204":
+          description: Session revoked.
+  /api/auth/me:
+    get:
+      summary: Get the authenticated principal
+      operationId: getAuthenticatedPrincipal
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Authenticated principal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Authentication required.
+  /api/auth/verify-email:
+    get:
+      summary: Verify an Admin email address
+      operationId: verifyAdminEmail
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email verified and a password setup token issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyEmailResponse"
+        "400":
+          description: Token is invalid, expired, or already used.
+  /api/auth/set-password:
+    post:
+      summary: Set the initial Admin password
+      operationId: setAdminPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPasswordRequest"
+      responses:
+        "200":
+          description: Password set and Admin activated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminActionResponse"
+        "400":
+          description: Request or setup token is invalid.
+  /api/admins:
+    post:
+      summary: Create an Admin
+      operationId: createAdmin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProfileInput"
+      responses:
+        "201":
+          description: Pending Admin created and verification email queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Admin"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Super Admin role required.
+        "409":
+          description: Email already exists.
+    get:
+      summary: List Admins
+      operationId: listAdmins
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Admin accounts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Admin"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Super Admin role required.
+  /api/admins/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get an Admin
+      operationId: getAdmin
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Admin account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Admin"
+        "404":
+          description: Admin not found.
+    patch:
+      summary: Update an Admin profile
+      operationId: updateAdmin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminPatchInput"
+      responses:
+        "200":
+          description: Updated Admin account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Admin"
+        "409":
+          description: Email already exists.
+  /api/admins/{id}/status:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      summary: Change Admin status
+      operationId: updateAdminStatus
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [PENDING, ACTIVE, DISABLED]
+      responses:
+        "200":
+          description: Updated Admin account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Admin"
+  /api/admins/{id}/resend-verification:
+    post:
+      summary: Resend an Admin verification email
+      operationId: resendAdminVerification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "202":
+          description: Verification email queued.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: verification_sent
+        "409":
+          description: Email is already verified.
+  /api/logs/login:
+    get:
+      summary: View login history
+      operationId: listLoginLogs
+      security:
+        - bearerAuth: []
+      parameters: &logQueryParameters
+        - $ref: "#/components/parameters/LogPage"
+        - $ref: "#/components/parameters/LogPageSize"
+        - $ref: "#/components/parameters/LogStart"
+        - $ref: "#/components/parameters/LogEnd"
+        - $ref: "#/components/parameters/LogActor"
+        - $ref: "#/components/parameters/LogAction"
+        - $ref: "#/components/parameters/LogSuccess"
+        - $ref: "#/components/parameters/LogSearch"
+      responses:
+        "200":
+          description: Paginated login history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedLogs"
+        "401":
+          description: Authentication required.
+  /api/logs/audit:
+    get:
+      summary: View audit history
+      operationId: listAuditLogs
+      security:
+        - bearerAuth: []
+      parameters: *logQueryParameters
+      responses:
+        "200":
+          description: Paginated audit history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedLogs"
+  /api/logs/security:
+    get:
+      summary: View security events
+      operationId: listSecurityEvents
+      security:
+        - bearerAuth: []
+      parameters: *logQueryParameters
+      responses:
+        "200":
+          description: Paginated security events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedLogs"
+  /api/logs/dataset-activity:
+    get:
+      summary: View dataset activity history
+      operationId: listDatasetActivityLogs
+      security:
+        - bearerAuth: []
+      parameters: *logQueryParameters
+      responses:
+        "200":
+          description: Paginated dataset activity history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedLogs"
+  /api/logs/database-activity:
+    get:
+      summary: View database activity history
+      operationId: listDatabaseActivityLogs
+      security:
+        - bearerAuth: []
+      parameters: *logQueryParameters
+      responses:
+        "200":
+          description: Paginated database activity history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedLogs"
+  /api/datasets/upload:
+    post:
+      summary: Upload and register dataset metadata
+      operationId: uploadDataset
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DatasetUploadRequest"
+      responses:
+        "201":
+          description: Dataset metadata registered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dataset"
+        "400":
+          description: File or metadata validation failed.
+        "401":
+          description: Authentication required.
+        "403":
+          description: Dataset ownership denied.
+  /api/datasets:
+    get:
+      summary: List accessible datasets
+      operationId: listDatasets
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dataset metadata visible to the authenticated user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dataset"
+  /api/datasets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get dataset metadata
+      operationId: getDataset
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dataset metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dataset"
+        "403":
+          description: Dataset ownership denied.
+        "404":
+          description: Dataset not found.
+    patch:
+      summary: Update safe dataset metadata
+      operationId: updateDataset
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatasetPatchRequest"
+      responses:
+        "200":
+          description: Updated dataset metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dataset"
+        "400":
+          description: Only safe metadata fields are accepted.
+        "403":
+          description: Dataset ownership denied.
+    delete:
+      summary: Delete dataset metadata and temporary file
+      operationId: deleteDataset
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Dataset metadata deleted.
+        "403":
+          description: Dataset ownership denied.
+components:
+  parameters:
+    LogPage:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LogPageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    LogStart:
+      name: start
+      in: query
+      schema:
+        type: string
+        format: date-time
+    LogEnd:
+      name: end
+      in: query
+      schema:
+        type: string
+        format: date-time
+    LogActor:
+      name: actor
+      in: query
+      schema:
+        type: string
+    LogAction:
+      name: action
+      in: query
+      schema:
+        type: string
+    LogSuccess:
+      name: success
+      in: query
+      schema:
+        type: boolean
+    LogSearch:
+      name: search
+      in: query
+      schema:
+        type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    DatabaseHealth:
+      type: object
+      required:
+        - status
+        - database
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - error
+        database:
+          type: string
+          const: system
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    AuthUser:
+      type: object
+      required:
+        - email
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            - ADMIN
+            - SUPER_ADMIN
+    AuthResponse:
+      type: object
+      required:
+        - accessToken
+        - user
+      properties:
+        accessToken:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+    AdminProfileInput:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          maxLength: 320
+    AdminPatchInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          maxLength: 320
+    Admin:
+      type: object
+      required: [id, name, email, emailVerified, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        emailVerified:
+          type: boolean
+        status:
+          type: string
+          enum: [PENDING, ACTIVE, DISABLED]
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    VerifyEmailResponse:
+      type: object
+      required: [status, email, setupToken]
+      properties:
+        status:
+          type: string
+          const: verified
+        email:
+          type: string
+          format: email
+        setupToken:
+          type: string
+    SetPasswordRequest:
+      type: object
+      required: [token, password, passwordConfirmation]
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          format: password
+          minLength: 12
+        passwordConfirmation:
+          type: string
+          format: password
+          minLength: 12
+    AdminActionResponse:
+      type: object
+      required: [status, admin]
+      properties:
+        status:
+          type: string
+          const: active
+        admin:
+          $ref: "#/components/schemas/Admin"
+    PaginatedLogs:
+      type: object
+      required: [items, page, pageSize, total, pageCount]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LogRecord"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        pageCount:
+          type: integer
+    LogRecord:
+      type: object
+      required: [id, timestamp, actorType, action, success, metadata]
+      properties:
+        id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        actorType:
+          type: string
+          enum: [ADMIN, SUPER_ADMIN, SYSTEM, ANONYMOUS]
+        actorId:
+          type: string
+          format: uuid
+          nullable: true
+        actorEmail:
+          type: string
+          format: email
+          nullable: true
+        action:
+          type: string
+        resourceType:
+          type: string
+          nullable: true
+        resourceId:
+          type: string
+          format: uuid
+          nullable: true
+        success:
+          type: boolean
+        ipAddress:
+          type: string
+          nullable: true
+        userAgent:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+        errorCode:
+          type: string
+          nullable: true
+    DatasetUploadRequest:
+      type: object
+      required: [file, name, visibility]
+      properties:
+        file:
+          type: string
+          format: binary
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 5000
+        visibility:
+          type: string
+          enum: [PRIVATE, PUBLIC]
+        ownerAdminId:
+          type: string
+          format: uuid
+          description: Used only by Super Admins; Admin ownership comes from the session.
+    DatasetPatchRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 5000
+        visibility:
+          type: string
+          enum: [PRIVATE, PUBLIC]
+    Dataset:
+      type: object
+      required: [id, ownerAdminId, name, originalFilename, fileType, detectedFields, visibility, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        ownerAdminId:
+          type: string
+          format: uuid
+        owner:
+          nullable: true
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        originalFilename:
+          type: string
+        fileType:
+          type: string
+          enum: [CSV, JSON, XLSX]
+        fileSizeBytes:
+          oneOf:
+            - type: integer
+            - type: string
+          nullable: true
+        detectedFields:
+          type: array
+          items:
+            type: string
+        recordCount:
+          oneOf:
+            - type: integer
+            - type: string
+          nullable: true
+        visibility:
+          type: string
+          enum: [PRIVATE, PUBLIC]
+        status:
+          type: string
+          const: UPLOADED
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

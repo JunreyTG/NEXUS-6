@@ -1,0 +1,225 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AdminStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+}
+
+enum DatasetStatus {
+  UPLOADED
+  ANALYZING
+  ANALYZED
+  READY
+  IMPORTING
+  ACTIVE
+  FAILED
+  ARCHIVED
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum DatabaseEngine {
+  MONGODB
+  MYSQL
+  POSTGRESQL
+  COUCHBASE
+  NEO4J
+  SQLSERVER
+}
+
+enum DatasetClassification {
+  RELATIONAL
+  DOCUMENT
+  KEY_VALUE
+  GRAPH
+  UNKNOWN
+}
+
+enum StorageType {
+  DATABASE
+  SCHEMA
+  TABLE
+  COLLECTION
+  SCOPE
+  GRAPH_NAMESPACE
+  OTHER
+}
+
+model Admin {
+  id                  String                   @id @default(uuid()) @db.Uuid
+  name                String
+  email               String                   @unique
+  passwordHash        String?
+  emailVerified       Boolean                  @default(false)
+  status              AdminStatus              @default(PENDING)
+  lastLoginAt         DateTime?                @db.Timestamptz(3)
+  createdAt           DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                 @updatedAt @db.Timestamptz(3)
+  sessions            AdminSession[]
+  verificationTokens  EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  passwordSetupTokens AdminPasswordSetupToken[]
+  datasets            Dataset[]
+  reports             Report[]
+}
+
+model AdminSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  adminId          String    @db.Uuid
+  refreshTokenHash String    @unique
+  expiresAt        DateTime  @db.Timestamptz(3)
+  revokedAt        DateTime? @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  ipAddress        String?
+  userAgent        String?
+  admin            Admin     @relation(fields: [adminId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([adminId, revokedAt])
+  @@index([expiresAt])
+}
+
+model SuperAdminSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  refreshTokenHash String    @unique
+  expiresAt        DateTime  @db.Timestamptz(3)
+  revokedAt        DateTime? @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  ipAddress        String?
+  userAgent        String?
+
+  @@index([revokedAt])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  adminId   String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz(3)
+  usedAt    DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  admin     Admin     @relation(fields: [adminId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([adminId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  adminId   String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz(3)
+  usedAt    DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  admin     Admin     @relation(fields: [adminId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([adminId])
+  @@index([expiresAt])
+}
+
+model AdminPasswordSetupToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  adminId   String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz(3)
+  usedAt    DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  admin     Admin     @relation(fields: [adminId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([adminId])
+  @@index([expiresAt])
+}
+
+model Dataset {
+  id                String                @id @default(uuid()) @db.Uuid
+  ownerAdminId      String                @db.Uuid
+  name              String
+  description       String?
+  originalFilename  String?
+  fileType          String?
+  classification    DatasetClassification @default(UNKNOWN)
+  recommendedEngine DatabaseEngine?
+  selectedEngine    DatabaseEngine?
+  visibility        Visibility            @default(PRIVATE)
+  status            DatasetStatus         @default(UPLOADED)
+  recordCount       BigInt?
+  fileSizeBytes     BigInt?
+  detectedFields    Json                  @default("[]")
+  temporaryFileKey  String?
+  createdAt         DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime              @updatedAt @db.Timestamptz(3)
+  owner             Admin                 @relation(fields: [ownerAdminId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  location          DatasetLocation?
+  analysis          DatasetAnalysis?
+  reports           Report[]
+
+  @@index([ownerAdminId])
+  @@index([status])
+  @@index([visibility])
+  @@index([selectedEngine])
+  @@index([createdAt])
+}
+
+model DatasetLocation {
+  id                String         @id @default(uuid()) @db.Uuid
+  datasetId         String         @unique @db.Uuid
+  engine            DatabaseEngine
+  storageType       StorageType
+  storageIdentifier String
+  databaseName      String?
+  namespace         String?
+  tableOrCollection String?
+  createdAt         DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime       @updatedAt @db.Timestamptz(3)
+  dataset           Dataset        @relation(fields: [datasetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+model DatasetAnalysis {
+  id                   String   @id @default(uuid()) @db.Uuid
+  datasetId            String   @unique @db.Uuid
+  analysis             Json
+  recommendationScores Json
+  recommendationReason String   @db.Text
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(3)
+  dataset              Dataset  @relation(fields: [datasetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+model Report {
+  id            String     @id @default(uuid()) @db.Uuid
+  datasetId     String     @db.Uuid
+  ownerAdminId  String     @db.Uuid
+  title         String
+  description   String?
+  configuration Json
+  visibility    Visibility @default(PRIVATE)
+  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
+  dataset       Dataset    @relation(fields: [datasetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  owner         Admin      @relation(fields: [ownerAdminId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([datasetId])
+  @@index([ownerAdminId])
+  @@index([visibility])
+  @@index([createdAt])
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
