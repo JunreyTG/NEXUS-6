@@ -1,5 +1,7 @@
 import "./load-env.js";
 import { z } from "zod";
+import { getDatasetDatabaseConfig } from "./dataset-databases.js";
+import type { DatasetDatabaseConfig } from "./dataset-databases.js";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -12,6 +14,11 @@ export function parseEnv(source: NodeJS.ProcessEnv): AppEnv {
   const result = envSchema.safeParse(source);
   if (!result.success) throw new Error("Invalid application environment configuration.");
   return result.data;
+}
+
+// Optional dataset engines are validated independently so missing credentials do not stop API startup.
+export function parseDatasetDatabaseConfig(source: NodeJS.ProcessEnv = process.env): DatasetDatabaseConfig {
+  return getDatasetDatabaseConfig(source);
 }
 
 const databaseUrl = z.string().trim().min(1).refine((value) => {

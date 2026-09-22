@@ -6,6 +6,9 @@ import { UploadValidationError } from "../errors/app-error.js";
 import { DatasetService, type DatasetActor } from "../services/dataset.service.js";
 import { requireUploadConfig } from "../uploads/config.js";
 import { TemporaryUploadStorage } from "../uploads/storage.js";
+import { DatasetStorageService } from "../services/dataset-storage.service.js";
+import { DATABASE_ENGINES } from "../database/types.js";
+import { DatasetRecordService } from "../services/dataset-record.service.js";
 
 const mimeTypes: Record<string, { type: "CSV" | "JSON" | "XLSX"; mime: string[] }> = {
   csv: { type: "CSV", mime: ["text/csv", "application/csv", "text/plain"] },
@@ -26,6 +29,16 @@ const patchInputSchema = z.object({
   visibility: z.enum(["PRIVATE", "PUBLIC"]).optional()
 }).strict().refine((value) => Object.keys(value).length > 0);
 
+const storageInputSchema = z.object({ engine: z.enum(DATABASE_ENGINES) }).strict();
+const recordIdSchema = z.string().trim().min(1).max(200).regex(/^[A-Za-z0-9_.:-]+$/);
+export const recordsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25),
+  sortBy: z.string().trim().min(1).max(200).regex(/^[A-Za-z0-9_$.[\]-]+$/).optional(),
+  sortDirection: z.enum(["asc", "desc"]).optional(),
+  search: z.string().trim().max(200).optional()
+}).strict();
+
 function actor(request: Request): DatasetActor {
   return {
     role: request.principal!.role,
@@ -45,7 +58,7 @@ export function detectUploadFileType(filename: string, mimetype: string): { exte
   return { extension, type: match.type };
 }
 
-export function createDatasetRouter(service = new DatasetService(), uploadStorage = new TemporaryUploadStorage()): Router {
+export function createDatasetRouter(service = new DatasetService(), uploadStorage = new TemporaryUploadStorage(), storageService = new DatasetStorageService(), recordService = new DatasetRecordService()): Router {
   const router = Router();
   const config = requireUploadConfig();
   const upload = multer({
@@ -60,7 +73,7 @@ export function createDatasetRouter(service = new DatasetService(), uploadStorag
         }
       }
     }),
-    limits: { fileSize: config.MAX_UPLOAD_SIZE_MB * 1024 * 1024, files: 1, fields: 10, parts: 11 },
+    limits: { ...(config.MAX_UPLOAD_SIZE_MB > 0 ? { fileSize: config.MAX_UPLOAD_SIZE_MB * 1024 * 1024 } : {}), files: 1, fields: 10, parts: 11 },
     fileFilter: (_request, file, callback) => {
       try {
         detectUploadFileType(file.originalname, file.mimetype);
@@ -118,6 +131,82 @@ export function createDatasetRouter(service = new DatasetService(), uploadStorag
   router.get("/:id", async (request, response, next) => {
     try {
       response.json(await service.get(z.string().uuid().parse(request.params.id), actor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/analyze", async (request, response, next) => {
+    try {
+      response.json(await service.analyze(z.string().uuid().parse(request.params.id), actor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/analysis", async (request, response, next) => {
+    try {
+      response.json(await service.getAnalysis(z.string().uuid().parse(request.params.id), actor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/storage", async (request, response, next) => {
+    try {
+      const id = z.string().uuid().parse(request.params.id);
+      const input = storageInputSchema.parse(request.body);
+      response.status(201).json(await storageService.requestStorage(id, input.engine, actor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/storage", async (request, response, next) => {
+    try {
+      response.json(await storageService.getStorageStatus(z.string().uuid().parse(request.params.id), actor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/records", async (request, response, next) => {
+    try {
+      const id = z.string().uuid().parse(request.params.id);
+      response.json(await recordService.list(id, recordsQuerySchema.parse(request.query), actor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/:id/records/:recordId", async (request, response, next) => {
+    try {
+      response.json(await recordService.get(z.string().uuid().parse(request.params.id), recordIdSchema.parse(request.params.recordId), actor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/records", async (request, response, next) => {
+    try {
+      response.status(201).json(await recordService.create(z.string().uuid().parse(request.params.id), request.body, actor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.patch("/:id/records/:recordId", async (request, response, next) => {
+    try {
+      response.json(await recordService.update(z.string().uuid().parse(request.params.id), recordIdSchema.parse(request.params.recordId), request.body, actor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.delete("/:id/records/:recordId", async (request, response, next) => {
+    try {
+      await recordService.delete(z.string().uuid().parse(request.params.id), recordIdSchema.parse(request.params.recordId), actor(request));
+      response.status(204).send();
     } catch (error) {
       next(error);
     }

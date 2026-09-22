@@ -8,6 +8,7 @@ export class DatabaseError extends AppError {
   }
 }
 
+
 // Deliberately discard the original driver error, including its message and cause.
 export async function databaseOperation<T>(operation: () => Promise<T>): Promise<T> {
   try {

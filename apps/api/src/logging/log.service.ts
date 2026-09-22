@@ -21,6 +21,10 @@ export class LogService implements ActivityLogger {
     await this.safeAppend("datasetActivityLog", input);
   }
 
+  async recordDatabaseActivity(input: LogRecordInput): Promise<void> {
+    await this.safeAppend("databaseActivityLog", input);
+  }
+
   listLogin(query: LogQuery): Promise<PaginatedLogs> {
     return this.repository.list("loginLog", query);
   }
@@ -41,7 +45,7 @@ export class LogService implements ActivityLogger {
     return this.repository.list("databaseActivityLog", query);
   }
 
-  private async safeAppend(model: "loginLog" | "auditLog" | "securityEvent" | "datasetActivityLog", input: LogRecordInput): Promise<void> {
+  private async safeAppend(model: "loginLog" | "auditLog" | "securityEvent" | "datasetActivityLog" | "databaseActivityLog", input: LogRecordInput): Promise<void> {
     try {
       await this.repository.append(model, { ...input, metadata: sanitizeMetadata(input.metadata ?? {}) });
     } catch {

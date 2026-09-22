@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { AppError, ConflictError, EmailProviderError, InvalidTokenError, NotFoundError, UploadValidationError } from "../errors/app-error.js";
 import { DatabaseError } from "../errors/database-error.js";
 import { AuthenticationError, AuthorizationError } from "../auth/errors.js";
+import { DatabaseNotConfiguredError, DatasetStorageUnavailableError } from "../database/errors.js";
 
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   // Never log arbitrary error messages, causes, driver metadata, or environment values.
@@ -13,6 +14,16 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
       const message = error.code === "LOG_DATABASE_UNAVAILABLE" ? "Log database unavailable." : "System database unavailable.";
       res.status(503).json({ error: { code: error.code, message } });
     }
+    return;
+  }
+
+  if (error instanceof DatabaseNotConfiguredError) {
+    res.status(503).json({ error: { code: error.code, message: "Selected database engine is not configured." } });
+    return;
+  }
+
+  if (error instanceof DatasetStorageUnavailableError) {
+    res.status(503).json({ error: { code: error.code, message: "Dataset storage is not configured yet." } });
     return;
   }
 

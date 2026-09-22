@@ -41,6 +41,7 @@ export type ActivityLogger = {
   recordAudit(input: LogRecordInput): Promise<void>;
   recordSecurity(input: LogRecordInput): Promise<void>;
   recordDatasetActivity(input: LogRecordInput): Promise<void>;
+  recordDatabaseActivity?: (input: LogRecordInput) => Promise<void>;
   listLogin(query: LogQuery): Promise<PaginatedLogs>;
   listAudit(query: LogQuery): Promise<PaginatedLogs>;
   listSecurity(query: LogQuery): Promise<PaginatedLogs>;

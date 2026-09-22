@@ -1,0 +1,58 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ApiError, createReport, deleteReport, getReport, listDatasets, listReports, previewReport, publishReport, unpublishReport, type ReportConfiguration, type ReportRecord } from "./api";
+import { useAuth } from "./auth";
+
+function reportError(error: unknown): string {
+  if (error instanceof ApiError && (error.code === "DATABASE_NOT_CONFIGURED" || error.code === "DATASET_STORAGE_NOT_CONFIGURED")) return "Dataset storage is not configured yet.";
+  if (error instanceof ApiError && error.status === 403) return "You do not have access to this report.";
+  if (error instanceof ApiError && error.code === "REPORT_FIELD_NOT_FOUND") return "The report contains a field that is not available in the dataset.";
+  return "The report request could not be completed.";
+}
+
+function ReportCard({ report }: { report: ReportRecord }) {
+  return <Link className="block rounded border border-slate-800 bg-slate-900/60 p-5 transition hover:border-cyan-300/50" to={`/reports/${report.id}`}><div className="flex justify-between gap-3"><h2 className="text-lg font-semibold text-white">{report.title}</h2><span className="text-xs text-cyan-200">{report.visibility}</span></div><p className="mt-2 text-sm text-slate-400">{report.description || "No description"}</p><p className="mt-4 text-xs text-slate-500">Dataset {report.datasetId}</p></Link>;
+}
+
+export function ReportListPage() {
+  const { accessToken } = useAuth();
+  const reports = useQuery({ queryKey: ["reports"], queryFn: () => listReports(accessToken!), enabled: Boolean(accessToken) });
+  return <section className="mt-12 rounded-lg border border-cyan-400/20 bg-slate-950/70 p-6 shadow-2xl"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-sm uppercase tracking-[0.25em] text-cyan-300/70">Engine-neutral reporting</p><h1 className="mt-2 text-3xl font-bold text-cyan-300">Reports</h1></div><Link className="rounded bg-cyan-300 px-4 py-2 font-semibold text-slate-950" to="/reports/create">Create Report</Link></div>{reports.isPending && <p className="mt-8 text-slate-400">Loading reports...</p>}{reports.isError && <p className="mt-8 text-rose-200">{reportError(reports.error)}</p>}{reports.data?.length === 0 && <p className="mt-8 text-slate-400">No reports created yet.</p>}<div className="mt-8 grid gap-4 lg:grid-cols-2">{reports.data?.map((report) => <ReportCard key={report.id} report={report} />)}</div></section>;
+}
+
+function ReportBuilder({ initialDatasetId = "", onCreated }: { initialDatasetId?: string; onCreated: (report: ReportRecord) => void }) {
+  const { accessToken } = useAuth();
+  const datasets = useQuery({ queryKey: ["datasets"], queryFn: () => listDatasets(accessToken!), enabled: Boolean(accessToken) });
+  const [datasetId, setDatasetId] = useState(initialDatasetId);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [visibility, setVisibility] = useState<ReportRecord["visibility"]>("PRIVATE");
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
+  const [grouping, setGrouping] = useState("");
+  const [aggregateOperation, setAggregateOperation] = useState<ReportConfiguration["aggregates"][number]["operation"]>("COUNT");
+  const [aggregateField, setAggregateField] = useState("");
+  const [filterField, setFilterField] = useState("");
+  const [filterValue, setFilterValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const dataset = datasets.data?.find((item) => item.id === datasetId);
+  const mutation = useMutation({ mutationFn: () => createReport({ datasetId, title, description, visibility, configuration: { selectedFields, grouping: grouping ? [grouping] : [], filters: filterField ? [{ field: filterField, operator: "eq", value: filterValue }] : [], aggregates: [{ operation: aggregateOperation, ...(aggregateField ? { field: aggregateField } : {}), alias: aggregateOperation.toLowerCase() }] } }, accessToken!), onSuccess: onCreated, onError: (requestError) => setError(reportError(requestError)) });
+  const fields = dataset?.detectedFields ?? [];
+  return <form className="mt-8 space-y-5" onSubmit={(event) => { event.preventDefault(); setError(null); void mutation.mutateAsync(); }}><label className="block text-sm text-slate-300">Dataset<select className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" onChange={(event) => setDatasetId(event.target.value)} required value={datasetId}><option value="">Choose a dataset</option>{datasets.data?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label className="block text-sm text-slate-300">Title<input className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" onChange={(event) => setTitle(event.target.value)} required value={title} /></label><label className="block text-sm text-slate-300">Description<textarea className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" onChange={(event) => setDescription(event.target.value)} rows={3} value={description} /></label><fieldset className="rounded border border-slate-800 p-4"><legend className="px-2 text-sm text-slate-400">Selected fields</legend>{fields.length === 0 && <p className="text-sm text-slate-500">Analyze the dataset to expose fields.</p>}{fields.map((field) => <label className="mr-4 inline-flex items-center gap-2 text-sm text-slate-300" key={field}><input checked={selectedFields.includes(field)} onChange={(event) => setSelectedFields((current) => event.target.checked ? [...current, field] : current.filter((item) => item !== field))} type="checkbox" />{field}</label>)}</fieldset><label className="block text-sm text-slate-300">Grouping field<input className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" list="report-fields" onChange={(event) => setGrouping(event.target.value)} value={grouping} /></label><div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm text-slate-300">Aggregate<select className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" onChange={(event) => setAggregateOperation(event.target.value as ReportConfiguration["aggregates"][number]["operation"])} value={aggregateOperation}><option>COUNT</option><option>SUM</option><option>AVG</option><option>MIN</option><option>MAX</option></select></label><label className="block text-sm text-slate-300">Aggregate field<input className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" list="report-fields" onChange={(event) => setAggregateField(event.target.value)} value={aggregateField} /></label></div><div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm text-slate-300">Filter field<input className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" list="report-fields" onChange={(event) => setFilterField(event.target.value)} value={filterField} /></label><label className="block text-sm text-slate-300">Equals<input className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" onChange={(event) => setFilterValue(event.target.value)} value={filterValue} /></label></div><datalist id="report-fields">{fields.map((field) => <option key={field} value={field} />)}</datalist><label className="block text-sm text-slate-300">Visibility<select className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" onChange={(event) => setVisibility(event.target.value as ReportRecord["visibility"])} value={visibility}><option value="PRIVATE">Private</option><option value="PUBLIC">Public metadata</option></select></label>{error && <p className="text-rose-200">{error}</p>}<button className="rounded bg-cyan-300 px-4 py-2 font-semibold text-slate-950 disabled:opacity-50" disabled={mutation.isPending} type="submit">{mutation.isPending ? "Creating..." : "Create Report"}</button></form>;
+}
+
+export function ReportCreatePage() {
+  const navigate = useNavigate();
+  return <section className="mx-auto mt-12 max-w-3xl rounded-lg border border-cyan-400/20 bg-slate-950/70 p-6 shadow-2xl"><Link className="text-sm text-cyan-300 hover:text-white" to="/reports">&lt;- Back to Reports</Link><h1 className="mt-6 text-3xl font-bold text-cyan-300">Create Report</h1><ReportBuilder onCreated={(report) => navigate(`/reports/${report.id}`)} /></section>;
+}
+
+export function ReportDetailPage() {
+  const { id = "" } = useParams();
+  const { accessToken } = useAuth();
+  const queryClient = useQueryClient();
+  const report = useQuery({ queryKey: ["report", id], queryFn: () => getReport(id, accessToken!), enabled: Boolean(accessToken && id) });
+  const preview = useMutation({ mutationFn: () => previewReport(id, accessToken!) });
+  const publish = useMutation({ mutationFn: () => report.data?.visibility === "PUBLIC" ? unpublishReport(id, accessToken!) : publishReport(id, accessToken!), onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["report", id] }); await queryClient.invalidateQueries({ queryKey: ["reports"] }); } });
+  const remove = useMutation({ mutationFn: () => deleteReport(id, accessToken!), onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["reports"] }); window.location.href = "/reports"; } });
+  return <section className="mt-12 rounded-lg border border-cyan-400/20 bg-slate-950/70 p-6 shadow-2xl"><Link className="text-sm text-cyan-300 hover:text-white" to="/reports">&lt;- Back to Reports</Link>{report.isPending && <p className="mt-8 text-slate-400">Loading report...</p>}{report.isError && <p className="mt-8 text-rose-200">{reportError(report.error)}</p>}{report.data && <><div className="mt-6 flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm uppercase tracking-[0.25em] text-cyan-300/70">Report configuration</p><h1 className="mt-2 text-3xl font-bold text-cyan-300">{report.data.title}</h1><p className="mt-2 text-slate-400">{report.data.description}</p></div><span className="rounded-full border border-cyan-300/20 px-3 py-1 text-xs text-cyan-200">{report.data.visibility}</span></div><pre className="mt-8 overflow-x-auto rounded border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300">{JSON.stringify(report.data.configuration, null, 2)}</pre><div className="mt-5 flex flex-wrap gap-3"><button className="rounded bg-cyan-300 px-4 py-2 font-semibold text-slate-950 disabled:opacity-50" disabled={preview.isPending} onClick={() => void preview.mutateAsync()} type="button">{preview.isPending ? "Previewing..." : "Preview"}</button><button className="rounded border border-cyan-300/40 px-4 py-2 text-cyan-200" disabled={publish.isPending} onClick={() => void publish.mutateAsync()} type="button">{report.data.visibility === "PUBLIC" ? "Unpublish" : "Publish"}</button><button className="rounded border border-rose-300/40 px-4 py-2 text-rose-200" onClick={() => { if (window.confirm("Delete this report?")) void remove.mutateAsync(); }} type="button">Delete</button></div>{preview.isError && <p className="mt-4 text-rose-200">{reportError(preview.error)}</p>}{preview.data && <div className="mt-6 rounded border border-slate-800 p-4"><h2 className="font-semibold text-white">Preview</h2><p className="mt-2 text-sm text-slate-400">{preview.data.rows.length} rows returned.</p><pre className="mt-3 overflow-x-auto text-xs text-slate-300">{JSON.stringify(preview.data.rows, null, 2)}</pre></div>}</>}</section>;
+}

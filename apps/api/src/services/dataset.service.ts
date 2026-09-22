@@ -6,6 +6,8 @@ import { LogService } from "../logging/log.service.js";
 import type { ActivityLogger, LogActor } from "../logging/types.js";
 import { parseDatasetFile, type ParsedDataset } from "../uploads/parsers.js";
 import { TemporaryUploadStorage } from "../uploads/storage.js";
+import { DatasetAnalyzer } from "../analysis/analyzer.js";
+import type { AnalysisResult } from "../analysis/types.js";
 
 export type DatasetActor = LogActor & {
   role: "ADMIN" | "SUPER_ADMIN";
@@ -58,6 +60,7 @@ export class DatasetService {
       admins?: Pick<AdminRepository, "findById">;
       storage?: TemporaryUploadStorage;
       logger?: ActivityLogger;
+      analyzer?: DatasetAnalyzer;
     } = {}
   ) {}
 
@@ -75,6 +78,10 @@ export class DatasetService {
 
   private get logger(): ActivityLogger {
     return this.dependencies.logger ?? new LogService();
+  }
+
+  private get analyzer(): DatasetAnalyzer {
+    return this.dependencies.analyzer ?? new DatasetAnalyzer();
   }
 
   async upload(file: UploadedDatasetFile, input: DatasetMetadataInput, actor: DatasetActor) {
@@ -136,6 +143,40 @@ export class DatasetService {
 
   async recordUploadFailure(actor: DatasetActor, errorCode: string): Promise<void> {
     await this.recordActivity({ ...actor, action: "DATASET_UPLOAD_FAILURE", success: false, errorCode });
+  }
+
+  async analyze(id: string, actor: DatasetActor): Promise<AnalysisResult> {
+    const dataset = await this.authorize(id, actor);
+    const fileType = dataset.fileType;
+    const temporaryFileKey = dataset.temporaryFileKey;
+    if ((fileType !== "CSV" && fileType !== "JSON" && fileType !== "XLSX") || !temporaryFileKey) throw new UploadValidationError("ANALYSIS_FILE_UNAVAILABLE");
+    await this.datasets.beginAnalysis(id);
+    await this.recordActivity({ ...actor, action: "DATASET_ANALYSIS_STARTED", resourceType: "DATASET", resourceId: id, success: true });
+    try {
+      const result = await this.analyzer.analyze(this.storage.resolve(temporaryFileKey), fileType);
+      await this.datasets.saveAnalysis(id, result);
+      await this.recordActivity({ ...actor, action: "DATASET_ANALYSIS_COMPLETED", resourceType: "DATASET", resourceId: id, success: true, metadata: { classification: result.classification, recommendedEngine: result.recommendedEngine, analyzedRecordCount: result.characteristics.analyzedRecordCount } });
+      return result;
+    } catch (error) {
+      await this.datasets.markAnalysisFailed(id).catch(() => undefined);
+      await this.recordActivity({ ...actor, action: "DATASET_ANALYSIS_FAILED", resourceType: "DATASET", resourceId: id, success: false, errorCode: error instanceof UploadValidationError ? error.code : "ANALYSIS_FAILED" });
+      throw error;
+    }
+  }
+
+  async getAnalysis(id: string, actor: DatasetActor) {
+    await this.authorize(id, actor);
+    const analysis = await this.datasets.getAnalysis(id);
+    if (!analysis) throw new NotFoundError("DATASET_ANALYSIS_NOT_FOUND");
+    return {
+      id: analysis.id,
+      datasetId: analysis.datasetId,
+      analysis: analysis.analysis,
+      recommendationScores: analysis.recommendationScores,
+      recommendationReason: analysis.recommendationReason,
+      createdAt: analysis.createdAt,
+      updatedAt: analysis.updatedAt
+    };
   }
 
   private async authorize(id: string, actor: DatasetActor) {

@@ -359,6 +359,90 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaginatedLogs"
+  /api/public/datasets:
+    get:
+      summary: List public datasets
+      operationId: listPublicDatasets
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: classification, in: query, schema: { type: string } }
+        - { name: engine, in: query, schema: { type: string, enum: [MONGODB, MYSQL, POSTGRESQL, COUCHBASE, NEO4J, SQLSERVER] } }
+      responses:
+        "200":
+          description: Public dataset page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicDatasetPage" }
+  /api/public/datasets/{id}:
+    get:
+      summary: Get a public dataset
+      operationId: getPublicDataset
+      parameters: [{ $ref: "#/components/parameters/DatasetId" }]
+      responses:
+        "200":
+          description: Public dataset metadata and public reports.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicDatasetDetail" }
+        "404": { description: Dataset is not public or does not exist. }
+  /api/public/reports:
+    get:
+      summary: List public reports
+      operationId: listPublicReports
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: datasetId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Public report page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicReportPage" }
+  /api/public/reports/{id}:
+    get:
+      summary: Get a public report and available result
+      operationId: getPublicReport
+      parameters: [{ $ref: "#/components/parameters/ReportId" }]
+      responses:
+        "200":
+          description: Public report metadata and optional live result.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicReportResponse" }
+        "404": { description: Report is not public or does not exist. }
+  /api/public/statistics:
+    get:
+      summary: Get public catalog statistics
+      operationId: getPublicStatistics
+      responses:
+        "200":
+          description: Counts and public classifications.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicStatistics" }
+  /api/databases/status:
+    get:
+      summary: View future database engine configuration status
+      operationId: getDatabaseStatuses
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Sanitized status and capability metadata for the six supported engines.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DatabaseEngineStatus"
+        "401":
+          description: Authentication required.
+        "403":
+          description: Super Admin access required.
   /api/datasets/upload:
     post:
       summary: Upload and register dataset metadata
@@ -455,8 +539,291 @@ paths:
           description: Dataset metadata deleted.
         "403":
           description: Dataset ownership denied.
+  /api/datasets/{id}/analyze:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Analyze an owned dataset and recommend a compatible engine
+      operationId: analyzeDataset
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Deterministic analysis and recommendation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetAnalysisResult"
+        "400":
+          description: Temporary source file is invalid or unavailable.
+        "403":
+          description: Dataset ownership denied.
+        "404":
+          description: Dataset not found.
+  /api/datasets/{id}/analysis:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get persisted dataset analysis
+      operationId: getDatasetAnalysis
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Persisted analysis and recommendation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetAnalysisRecord"
+        "403":
+          description: Dataset ownership denied.
+        "404":
+          description: Dataset analysis or dataset not found.
+  /api/datasets/{id}/storage:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Request storage creation for an analyzed dataset
+      operationId: createDatasetStorage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatasetStorageRequest"
+      responses:
+        "201":
+          description: Dataset storage created and location persisted.
+        "400":
+          description: Invalid or incompatible engine selection.
+        "403":
+          description: Dataset ownership denied.
+        "503":
+          description: Selected database engine is not configured.
+    get:
+      summary: Get safe dataset storage status
+      operationId: getDatasetStorageStatus
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Safe storage status and location metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetStorageStatus"
+        "403":
+          description: Dataset ownership denied.
+  /api/datasets/{id}/records:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: List engine-neutral dataset records
+      operationId: listDatasetRecords
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+        - name: sortBy
+          in: query
+          schema: { type: string }
+        - name: sortDirection
+          in: query
+          schema: { type: string, enum: [asc, desc] }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated records.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordPage"
+        "403":
+          description: Dataset ownership denied.
+    post:
+      summary: Insert a dataset record
+      operationId: createDatasetRecord
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "201": { description: Record inserted. }
+        "400": { description: Record validation failed. }
+        "503": { description: Dataset storage is not configured. }
+  /api/datasets/{id}/records/{recordId}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: recordId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      summary: Get one dataset record
+      operationId: getDatasetRecord
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Dataset record.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        "403": { description: Dataset ownership denied. }
+    patch:
+      summary: Update one dataset record
+      operationId: updateDatasetRecord
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200": { description: Record updated. }
+        "400": { description: Record validation failed. }
+    delete:
+      summary: Delete one dataset record
+      operationId: deleteDatasetRecord
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Record deleted. }
+        "403": { description: Dataset ownership denied. }
+  /api/reports:
+    get:
+      summary: List accessible reports
+      operationId: listReports
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Reports owned by the Admin or all reports for Super Admin.
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Report" } }
+    post:
+      summary: Create an engine-neutral report
+      operationId: createReport
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReportRequest" }
+      responses:
+        "201":
+          description: Report created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Report" }
+        "400": { description: Report validation failed. }
+        "403": { description: Dataset ownership denied. }
+  /api/reports/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Get a report
+      operationId: getReport
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Report configuration.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Report" }
+        "403": { description: Report ownership denied. }
+    patch:
+      summary: Update a report
+      operationId: updateReport
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReportPatchRequest" }
+      responses:
+        "200": { description: Report updated. }
+        "400": { description: Report validation failed. }
+    delete:
+      summary: Delete a report
+      operationId: deleteReport
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Report deleted. }
+  /api/reports/{id}/preview:
+    post:
+      summary: Preview a report through the selected adapter
+      operationId: previewReport
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Normalized report preview.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportPreview" }
+        "503": { description: Dataset storage is not configured. }
+  /api/reports/{id}/publish:
+    post:
+      summary: Publish report metadata
+      operationId: publishReport
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Report visibility changed to PUBLIC. }
+  /api/reports/{id}/unpublish:
+    post:
+      summary: Unpublish report metadata
+      operationId: unpublishReport
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Report visibility changed to PRIVATE. }
 components:
   parameters:
+    DatasetId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ReportId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     LogPage:
       name: page
       in: query
@@ -791,10 +1158,227 @@ components:
           enum: [PRIVATE, PUBLIC]
         status:
           type: string
-          const: UPLOADED
+          enum: [UPLOADED, ANALYZING, ANALYZED, READY, IMPORTING, ACTIVE, FAILED, ARCHIVED]
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
+    DatasetAnalysisResult:
+      type: object
+      required: [classification, recommendedEngine, scores, compatibleEngines, reasons, characteristics]
+      properties:
+        classification:
+          type: string
+          enum: [RELATIONAL, DOCUMENT, KEY_VALUE, GRAPH, UNKNOWN]
+        recommendedEngine:
+          type: string
+          nullable: true
+          enum: [MONGODB, MYSQL, POSTGRESQL, COUCHBASE, NEO4J, SQLSERVER]
+        scores:
+          type: object
+          additionalProperties:
+            type: integer
+        compatibleEngines:
+          type: array
+          items:
+            type: string
+        reasons:
+          type: array
+          items:
+            type: string
+        characteristics:
+          type: object
+          additionalProperties: true
+    DatasetAnalysisRecord:
+      type: object
+      required: [id, datasetId, analysis, recommendationScores, recommendationReason, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        datasetId:
+          type: string
+          format: uuid
+        analysis:
+          type: object
+          additionalProperties: true
+        recommendationScores:
+          type: object
+          additionalProperties:
+            type: integer
+        recommendationReason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PublicDataset:
+      type: object
+      required: [id, name, classification, recommendedEngine, selectedEngine, recordCount, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        classification: { type: string }
+        recommendedEngine: { type: string, nullable: true }
+        selectedEngine: { type: string, nullable: true }
+        recordCount: { oneOf: [{ type: integer }, { type: string }, { type: "null" }] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PublicDatasetPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/PublicDataset" } }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+    PublicDatasetDetail:
+      allOf:
+        - $ref: "#/components/schemas/PublicDataset"
+        - type: object
+          required: [reports]
+          properties:
+            reports: { type: array, items: { $ref: "#/components/schemas/PublicReport" } }
+    PublicReport:
+      type: object
+      required: [id, datasetId, title, visibility, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        datasetId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        visibility: { type: string, enum: [PUBLIC] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PublicReportPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/PublicReport" } }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+    PublicReportResponse:
+      type: object
+      required: [report, result, unavailable]
+      properties:
+        report: { allOf: [{ $ref: "#/components/schemas/PublicReport" }, { type: object, additionalProperties: true }] }
+        result: { type: object, nullable: true, additionalProperties: true }
+        unavailable: { type: boolean }
+    PublicStatistics:
+      type: object
+      required: [datasets, reports, classifications, engines]
+      properties:
+        datasets: { type: integer }
+        reports: { type: integer }
+        classifications: { type: object, additionalProperties: { type: integer } }
+        engines: { type: object, additionalProperties: { type: integer } }
+    DatabaseEngineStatus:
+      type: object
+      required: [engine, displayName, databaseType, dataModels, storageConcept, status]
+      properties:
+        engine:
+          type: string
+          enum: [MONGODB, MYSQL, POSTGRESQL, COUCHBASE, NEO4J, SQLSERVER]
+        displayName:
+          type: string
+        databaseType:
+          type: string
+        dataModels:
+          type: array
+          items:
+            type: string
+            enum: [RELATIONAL, DOCUMENT, KEY_VALUE, GRAPH]
+        storageConcept:
+          type: string
+        status:
+          type: string
+          enum: [not_configured, configured, healthy, unavailable]
+    DatasetStorageRequest:
+      type: object
+      required: [engine]
+      additionalProperties: false
+      properties:
+        engine:
+          type: string
+          enum: [MONGODB, MYSQL, POSTGRESQL, COUCHBASE, NEO4J, SQLSERVER]
+    DatasetStorageStatus:
+      type: object
+       required: [configured, engineConfigured, selectedEngine, locationCreated, location]
+       properties:
+         configured:
+           type: boolean
+         engineConfigured:
+           type: boolean
+        selectedEngine:
+          type: string
+          nullable: true
+        locationCreated:
+          type: boolean
+        location:
+          nullable: true
+          type: object
+          additionalProperties: true
+    RecordPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items: { type: object, additionalProperties: true }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+    ReportConfiguration:
+      type: object
+      required: [selectedFields, filters, grouping, aggregates]
+      additionalProperties: false
+      properties:
+        selectedFields: { type: array, items: { type: string } }
+        filters: { type: array, items: { type: object, additionalProperties: true } }
+        grouping: { type: array, items: { type: string } }
+        aggregates: { type: array, items: { type: object, additionalProperties: true } }
+    ReportRequest:
+      type: object
+      required: [datasetId, title, configuration, visibility]
+      additionalProperties: false
+      properties:
+        datasetId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        configuration: { $ref: "#/components/schemas/ReportConfiguration" }
+        visibility: { type: string, enum: [PRIVATE, PUBLIC] }
+    ReportPatchRequest:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        title: { type: string }
+        description: { type: string }
+        configuration: { $ref: "#/components/schemas/ReportConfiguration" }
+        visibility: { type: string, enum: [PRIVATE, PUBLIC] }
+    Report:
+      type: object
+      required: [id, datasetId, ownerAdminId, title, configuration, visibility, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        datasetId: { type: string, format: uuid }
+        ownerAdminId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        configuration: { $ref: "#/components/schemas/ReportConfiguration" }
+        visibility: { type: string, enum: [PRIVATE, PUBLIC] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ReportPreview:
+      type: object
+      required: [reportId, columns, rows]
+      properties:
+        reportId: { type: string, format: uuid }
+        columns: { type: array, items: { type: string } }
+        rows: { type: array, items: { type: object, additionalProperties: true } }

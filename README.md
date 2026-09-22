@@ -81,9 +81,27 @@ GET /api/logs/audit
 GET /api/logs/security
 GET /api/logs/dataset-activity
 GET /api/logs/database-activity
+GET /api/databases/status
 POST /api/datasets/upload
 GET /api/datasets
 GET /api/datasets/:id
+POST /api/datasets/:id/analyze
+GET /api/datasets/:id/analysis
+POST /api/datasets/:id/storage
+GET /api/datasets/:id/storage
+GET /api/datasets/:id/records
+GET /api/datasets/:id/records/:recordId
+POST /api/datasets/:id/records
+PATCH /api/datasets/:id/records/:recordId
+DELETE /api/datasets/:id/records/:recordId
+POST /api/reports
+GET /api/reports
+GET /api/reports/:id
+PATCH /api/reports/:id
+DELETE /api/reports/:id
+POST /api/reports/:id/preview
+POST /api/reports/:id/publish
+POST /api/reports/:id/unpublish
 PATCH /api/datasets/:id
 DELETE /api/datasets/:id
 ```
@@ -127,7 +145,7 @@ npm run preview
 
 ## Environment
 
-Copy `.env.example` to `.env` for local backend development. Configure the Neon system database values when available. Do not add credentials for the six dataset databases.
+Copy `.env.example` to `.env` for local backend development. Configure the Neon system database values when available. The six dataset-database credential groups are optional, backend-only settings; never expose them to the frontend or commit real values.
 
 `SYSTEM_DATABASE_URL` is the runtime connection used by the API. `SYSTEM_DATABASE_DIRECT_URL` is the direct Neon connection used by Prisma migration commands. Neither value is logged or returned by the API.
 
@@ -159,7 +177,8 @@ EMAIL_FROM=NEXUS-6 <noreply@localhost>
 RESEND_API_KEY=
 VERIFICATION_TOKEN_EXPIRES_HOURS=24
 PASSWORD_SETUP_TOKEN_EXPIRES_MINUTES=30
-MAX_UPLOAD_SIZE_MB=10
+# 0 = unlimited file size
+MAX_UPLOAD_SIZE_MB=0
 TEMP_UPLOAD_DIR=
 TEMP_UPLOAD_RETENTION_HOURS=24
 ```
@@ -170,4 +189,18 @@ Super Admin access remains environment-only. A Super Admin can create and manage
 
 Authenticated Admins and Super Admins can view read-only activity history at `/logs/login`, `/logs/audit`, `/logs/security`, `/logs/dataset-activity`, and `/logs/database-activity`. The API supports date, actor, action, result, text search, and pagination filters. Log metadata is sanitized before persistence and no API mutation routes exist.
 
-Phase 6 dataset uploads support CSV, JSON, and XLSX. The API parses only basic fields and record counts, stores metadata in the system database, and keeps the uploaded file under a private generated temporary filename. `MAX_UPLOAD_SIZE_MB`, `TEMP_UPLOAD_DIR`, and `TEMP_UPLOAD_RETENTION_HOURS` control upload limits and cleanup. No dataset database adapter or remote storage is used yet.
+Phase 6 dataset uploads support CSV, JSON, and XLSX. The API parses basic metadata, stores it in the system database, and keeps the uploaded file under a private generated temporary filename. `MAX_UPLOAD_SIZE_MB=0` disables the configured file-size limit; `TEMP_UPLOAD_DIR` may be left empty to use the private default directory, and `TEMP_UPLOAD_RETENTION_HOURS` controls cleanup.
+
+Phase 7 adds deterministic, explainable analysis for owned datasets. Analysis profiles bounded samples for inferred types, nulls, uniqueness, identifiers, relationships, nesting, arrays, schema consistency, graph edges, and key-value patterns. Results and recommendation scores are persisted as metadata in `DatasetAnalysis`; source contents and temporary paths are never persisted or returned. The recommendation layer covers only the six planned engines and does not connect to or create any dataset database.
+
+Phase 8 adds the common `DatabaseAdapter` contract, `DatabaseRouter`, reusable engine capabilities, safe backend-generated storage identifiers, and adapter boundaries for six engines. `GET /api/databases/status` is restricted to Super Admins and returns only engine capabilities and configured/not-configured status. The frontend exposes this information at `/databases/status` without credential fields.
+
+Phase 9 adds the analyzed-dataset storage workflow. Admins can choose a compatible engine through `POST /api/datasets/:id/storage`; the backend validates ownership, analysis state, compatibility, and generates the storage identifier internally. The adapter is called before `DatasetLocation` is written. Engines without an implementation safely return `DATABASE_NOT_CONFIGURED` and do not create a location.
+
+Phase 10 adds engine-neutral dataset record APIs and report management. Records and report previews route through `DatabaseRouter` and typed adapter requests; raw SQL, Cypher, Mongo commands, connection metadata, and full record contents are not accepted in report or activity-log payloads. Reports support selected fields, filters, grouping, COUNT/SUM/AVG/MIN/MAX aggregates, private/public metadata, preview, and publish/unpublish operations.
+
+Phase 11 adds the public portal and optional six-engine environment configuration. Anonymous endpoints are available at `/api/public/datasets`, `/api/public/datasets/:id`, `/api/public/reports`, `/api/public/reports/:id`, and `/api/public/statistics`; they filter datasets and reports by `PUBLIC`, omit owner/storage internals, apply bounded pagination and search filters, and use a dedicated rate limit. Public report results are returned only when the selected adapter is available; otherwise the response contains a safe unavailable state. The frontend exposes `/`, `/about`, `/datasets`, `/datasets/:id`, `/reports`, `/reports/:id`, and `/technologies`; authenticated users retain the protected admin workspace at the dataset/report URLs.
+
+The optional dataset environment groups are `MONGODB_URI`, `MYSQL_*`, `POSTGRES_DATA_*`, `COUCHBASE_*`, `NEO4J_*`, and `SQLSERVER_*`. Zod validation treats missing or invalid optional groups as not configured without preventing the API from starting. Configuration status does not perform a live connection test, and secrets are never returned by status or public endpoints.
+
+The MySQL adapter is implemented when the `MYSQL_*` group is complete. It creates a dataset-specific table with parameterized record values and supports record listing, CRUD, schema inspection, and report aggregation. The other five engine adapters remain intentionally unavailable until their drivers and adapter implementations are added.

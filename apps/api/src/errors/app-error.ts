@@ -44,3 +44,17 @@ export class UploadValidationError extends AppError {
     this.name = "UploadValidationError";
   }
 }
+
+export class RecordValidationError extends AppError {
+  public constructor(code = "RECORD_INVALID") {
+    super("Record data is invalid.", 400, code);
+    this.name = "RecordValidationError";
+  }
+}
+
+export class ReportValidationError extends AppError {
+  public constructor(code = "REPORT_INVALID") {
+    super("Report configuration is invalid.", 400, code);
+    this.name = "ReportValidationError";
+  }
+}
