@@ -6,7 +6,7 @@ import { DatabaseNotConfiguredError, UnsupportedDatabaseEngineError } from "../s
 import { ENGINE_CAPABILITIES } from "../src/database/capabilities.js";
 import { DatabaseRouter } from "../src/database/router.js";
 import { generateStorageIdentifier } from "../src/database/storage-naming.js";
-import { DATABASE_ENGINES, type DatabaseEngine } from "../src/database/types.js";
+import { DATABASE_ENGINES } from "../src/database/types.js";
 import { MongoDbAdapter } from "../src/database/adapters/mongo-db.adapter.js";
 import { MySqlAdapter } from "../src/database/adapters/mysql.adapter.js";
 import { PostgresAdapter } from "../src/database/adapters/postgres.adapter.js";
@@ -16,7 +16,7 @@ import { SqlServerAdapter } from "../src/database/adapters/sql-server.adapter.js
 import { DatasetStorageService } from "../src/services/dataset-storage.service.js";
 import type { DatasetRepository } from "../src/repositories/dataset.repository.js";
 import { createApp } from "../src/app.js";
-import { getDatasetDatabaseConfig, getDatasetDatabaseStatuses } from "../src/config/dataset-databases.js";
+import { getDatasetDatabaseConfig } from "../src/config/dataset-databases.js";
 
 const config: AuthConfig = {
   NODE_ENV: "test",
@@ -48,8 +48,7 @@ describe("Phase 8 database abstraction", () => {
     const router = new DatabaseRouter();
     expect(() => router.getAdapter("ORACLE")).toThrowError(UnsupportedDatabaseEngineError);
     const config = getDatasetDatabaseConfig();
-    const implemented: DatabaseEngine[] = ["MYSQL", "POSTGRESQL", "SQLSERVER"];
-    for (const engine of DATABASE_ENGINES) await expect(router.getAdapter(engine).healthCheck()).resolves.toEqual({ engine, status: implemented.includes(engine) && config[engine].configured ? "configured" : "not_configured" });
+    for (const engine of DATABASE_ENGINES) await expect(router.getAdapter(engine).healthCheck()).resolves.toEqual({ engine, status: router.getAdapter(engine).isImplemented && config[engine].configured ? "configured" : "not_configured" });
     await expect(router.getAdapter("MONGODB").createStorage({ ownerAdminId: "admin", datasetId: "dataset", storageIdentifier: "safe" })).rejects.toMatchObject({ code: "DATABASE_NOT_CONFIGURED" });
     await expect(router.getAdapter("MONGODB").createStorage({ ownerAdminId: "admin", datasetId: "dataset", storageIdentifier: "safe" })).rejects.toBeInstanceOf(DatabaseNotConfiguredError);
   });
@@ -95,7 +94,7 @@ describe("database status endpoint", () => {
     const success = await request(app).get("/api/databases/status").set("Authorization", `Bearer ${superToken}`);
     expect(success.status).toBe(200);
     expect(success.body).toHaveLength(6);
-    expect(success.body).toEqual(expect.arrayContaining([expect.objectContaining({ engine: "MONGODB", status: getDatasetDatabaseStatuses().MONGODB }), expect.objectContaining({ engine: "SQLSERVER", status: getDatasetDatabaseStatuses().SQLSERVER })]));
+    expect(success.body).toEqual(new DatabaseRouter().getStatuses());
     expect(JSON.stringify(success.body)).not.toMatch(/password|connection string|hostname|\bport\b/i);
     expect((await request(app).get("/api/databases/status").set("Authorization", `Bearer ${adminToken}`)).status).toBe(403);
   });

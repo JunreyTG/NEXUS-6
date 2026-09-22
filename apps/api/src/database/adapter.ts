@@ -17,6 +17,7 @@ import type {
 
 export interface DatabaseAdapter {
   readonly engine: import("./types.js").DatabaseEngine;
+  readonly isImplemented: boolean;
   healthCheck(): Promise<DatabaseHealthResult>;
   createStorage(request: StorageRequest): Promise<StorageDescriptor>;
   importDataset(request: ImportDatasetRequest): Promise<ImportDatasetResult>;

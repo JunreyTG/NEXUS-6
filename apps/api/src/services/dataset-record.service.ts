@@ -9,7 +9,7 @@ import { DatasetRepository } from "../repositories/dataset.repository.js";
 export type RecordActor = LogActor & { role: "ADMIN" | "SUPER_ADMIN" };
 type RecordQueryInput = { page: number; pageSize: number; sortBy?: string | undefined; sortDirection?: "asc" | "desc" | undefined; search?: string | undefined };
 
-const protectedFields = new Set(["datasetId", "ownerAdminId", "storageIdentifier", "databaseName", "namespace", "tableOrCollection", "connectionString", "credentials", "password", "host", "port", "query", "sql", "cypher", "command"]);
+const protectedFields = new Set(["datasetId", "ownerAdminId", "storageIdentifier", "databaseName", "namespace", "tableOrCollection", "connectionString", "credentials", "password", "host", "port", "query", "sql", "cypher", "command", "__proto__", "prototype", "constructor"]);
 
 function safeFieldName(field: string): boolean {
   return /^[A-Za-z0-9_$.[\]-]+$/.test(field) && field.length <= 200;

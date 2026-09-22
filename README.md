@@ -177,8 +177,8 @@ EMAIL_FROM=NEXUS-6 <noreply@localhost>
 RESEND_API_KEY=
 VERIFICATION_TOKEN_EXPIRES_HOURS=24
 PASSWORD_SETUP_TOKEN_EXPIRES_MINUTES=30
-# 0 = unlimited file size
-MAX_UPLOAD_SIZE_MB=0
+# Maximum accepted upload size in megabytes
+MAX_UPLOAD_SIZE_MB=100
 TEMP_UPLOAD_DIR=
 TEMP_UPLOAD_RETENTION_HOURS=24
 ```
@@ -189,7 +189,7 @@ Super Admin access remains environment-only. A Super Admin can create and manage
 
 Authenticated Admins and Super Admins can view read-only activity history at `/logs/login`, `/logs/audit`, `/logs/security`, `/logs/dataset-activity`, and `/logs/database-activity`. The API supports date, actor, action, result, text search, and pagination filters. Log metadata is sanitized before persistence and no API mutation routes exist.
 
-Phase 6 dataset uploads support CSV, JSON, and XLSX. The API parses basic metadata, stores it in the system database, and keeps the uploaded file under a private generated temporary filename. `MAX_UPLOAD_SIZE_MB=0` disables the configured file-size limit; `TEMP_UPLOAD_DIR` may be left empty to use the private default directory, and `TEMP_UPLOAD_RETENTION_HOURS` controls cleanup.
+Phase 6 dataset uploads support CSV, JSON, and XLSX. The API parses basic metadata, stores it in the system database, and keeps the uploaded file under a private generated temporary filename. `MAX_UPLOAD_SIZE_MB` is bounded to a maximum of 100 MB; legacy `0` values are treated as the secure 100 MB default. `TEMP_UPLOAD_DIR` may be left empty to use the private default directory, and `TEMP_UPLOAD_RETENTION_HOURS` controls cleanup.
 
 Phase 7 adds deterministic, explainable analysis for owned datasets. Analysis profiles bounded samples for inferred types, nulls, uniqueness, identifiers, relationships, nesting, arrays, schema consistency, graph edges, and key-value patterns. Results and recommendation scores are persisted as metadata in `DatasetAnalysis`; source contents and temporary paths are never persisted or returned. The recommendation layer covers only the six planned engines and does not connect to or create any dataset database.
 
@@ -203,4 +203,8 @@ Phase 11 adds the public portal and optional six-engine environment configuratio
 
 The optional dataset environment groups are `MONGODB_URI`, `MYSQL_*`, `POSTGRES_DATA_*`, `COUCHBASE_*`, `NEO4J_*`, and `SQLSERVER_*`. Zod validation treats missing or invalid optional groups as not configured without preventing the API from starting. Configuration status does not perform a live connection test, and secrets are never returned by status or public endpoints.
 
-The MySQL adapter is implemented when the `MYSQL_*` group is complete. It creates a dataset-specific table with parameterized record values and supports record listing, CRUD, schema inspection, and report aggregation. The other five engine adapters remain intentionally unavailable until their drivers and adapter implementations are added.
+All six dataset adapters remain intentionally disabled during Phase 12. Complete environment configuration is validated and reported safely, but credentials alone do not create tables, connect to engines, or fake successful storage operations.
+
+Phase 12 hardens authentication and pre-integration boundaries. Access tokens with real server session IDs are checked against active, non-revoked sessions and active Admin state; refresh rotation and logout revocation remain server-side. Login, refresh, verification, password setup, upload, and public endpoints are rate-limited. Uploads have a bounded size, generated private filenames, strict type checks, temporary cleanup, and hardened XML/record key parsing. Metadata redaction covers connection strings, credentials, tokens, hosts, ports, URLs, and authorization values; console email delivery never prints one-time links. Production requires an explicit CORS origin, public responses omit owner/storage internals and report configuration, and database status distinguishes configured, unavailable, and not-configured engines.
+
+Before live database integration, the remaining gaps are implementation-specific adapter threat modeling, end-to-end tests against isolated disposable database instances, operational secret rotation, and a system-settings API if runtime settings management is required. No full six-engine production integration is enabled by Phase 12.

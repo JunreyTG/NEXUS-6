@@ -26,7 +26,7 @@ export function DatabaseStatusPage() {
          <article className="rounded border border-slate-800 bg-slate-900/60 p-5" key={database.engine}>
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-lg font-semibold text-white">{database.displayName}</h2>
-              <span className={`rounded-full border px-2 py-1 text-xs ${database.status === "configured" ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-200" : "border-amber-300/30 bg-amber-400/10 text-amber-200"}`}>{database.status === "configured" ? "Configured" : database.status === "not_configured" ? "Not Configured" : database.status}</span>
+              <span className={`rounded-full border px-2 py-1 text-xs ${database.status === "configured" ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-200" : database.status === "unavailable" ? "border-rose-300/30 bg-rose-400/10 text-rose-200" : "border-amber-300/30 bg-amber-400/10 text-amber-200"}`}>{database.status === "configured" ? "Configured" : database.status === "not_configured" ? "Not Configured" : "Unavailable"}</span>
             </div>
             <dl className="mt-5 space-y-3 text-sm text-slate-300">
               <div><dt className="text-slate-500">Database type</dt><dd>{database.databaseType}</dd></div>

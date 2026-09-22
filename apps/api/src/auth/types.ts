@@ -5,6 +5,7 @@ export type AuthenticatedPrincipal = {
   id: string | null;
   email: string;
   role: AuthRole;
+  sessionId?: string | undefined;
 };
 
 export type SafeUser = Pick<AuthenticatedPrincipal, "email" | "role">;

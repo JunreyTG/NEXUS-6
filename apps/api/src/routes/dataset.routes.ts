@@ -2,6 +2,7 @@ import multer from "multer";
 import { Router, type Request } from "express";
 import { z } from "zod";
 import { authenticate, requireAdminOrSuperAdmin } from "../auth/middleware.js";
+import type { RequestHandler } from "express";
 import { UploadValidationError } from "../errors/app-error.js";
 import { DatasetService, type DatasetActor } from "../services/dataset.service.js";
 import { requireUploadConfig } from "../uploads/config.js";
@@ -10,6 +11,7 @@ import { DatasetStorageService } from "../services/dataset-storage.service.js";
 import { DATABASE_ENGINES } from "../database/types.js";
 import { DatasetRecordService } from "../services/dataset-record.service.js";
 import type { DatasetFileType } from "../uploads/parsers.js";
+import rateLimit from "express-rate-limit";
 
 const mimeTypes: Record<string, { type: DatasetFileType; mime: string[] }> = {
   csv: { type: "CSV", mime: ["text/csv", "application/csv", "text/plain"] },
@@ -44,6 +46,13 @@ export const recordsQuerySchema = z.object({
   search: z.string().trim().max(200).optional()
 }).strict();
 
+const uploadRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 function actor(request: Request): DatasetActor {
   return {
     role: request.principal!.role,
@@ -63,7 +72,7 @@ export function detectUploadFileType(filename: string, mimetype: string): { exte
   return { extension, type: match.type };
 }
 
-export function createDatasetRouter(service = new DatasetService(), uploadStorage = new TemporaryUploadStorage(), storageService = new DatasetStorageService(), recordService = new DatasetRecordService()): Router {
+export function createDatasetRouter(service = new DatasetService(), uploadStorage = new TemporaryUploadStorage(), storageService = new DatasetStorageService(), recordService = new DatasetRecordService(), authenticateMiddleware: RequestHandler = authenticate): Router {
   const router = Router();
   const config = requireUploadConfig();
   const upload = multer({
@@ -90,9 +99,9 @@ export function createDatasetRouter(service = new DatasetService(), uploadStorag
   });
 
   void uploadStorage.cleanupExpired().catch(() => undefined);
-  router.use(authenticate, requireAdminOrSuperAdmin);
+  router.use(authenticateMiddleware, requireAdminOrSuperAdmin);
 
-  router.post("/upload", (request, response, next) => {
+  router.post("/upload", uploadRateLimit, (request, response, next) => {
     upload.single("file")(request, response, (error: unknown) => {
       if (!error) {
         next();

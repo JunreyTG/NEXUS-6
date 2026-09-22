@@ -51,7 +51,7 @@ function createStorageFixture(overrides: Record<string, unknown> = {}) {
   } as unknown as DatasetRepository;
   const unconfigured = getDatasetDatabaseConfig({});
   const router = new DatabaseRouter({
-    MYSQL: new MySqlAdapter(unconfigured.MYSQL),
+    MYSQL: new MySqlAdapter(),
     POSTGRESQL: new PostgresAdapter(unconfigured.POSTGRESQL),
     SQLSERVER: new SqlServerAdapter(unconfigured.SQLSERVER)
   });

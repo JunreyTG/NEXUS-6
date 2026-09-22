@@ -16,8 +16,10 @@ import { ReportService } from "../services/report.service.js";
 import { createReportRouter } from "./report.routes.js";
 import { createPublicRouter } from "./public.routes.js";
 import { PublicService } from "../services/public.service.js";
+import { createAuthenticate } from "../auth/middleware.js";
+import type { AuthSessionRepository } from "../repositories/auth-session.repository.js";
 
-export function createApiRouter(authService?: AuthService, adminService?: AdminManagementService, logService?: LogService, datasetService?: DatasetService, databaseRouter?: DatabaseRouter, datasetStorageService?: DatasetStorageService, datasetRecordService?: DatasetRecordService, reportService?: ReportService, publicService?: PublicService): Router {
+export function createApiRouter(authService?: AuthService, adminService?: AdminManagementService, logService?: LogService, datasetService?: DatasetService, databaseRouter?: DatabaseRouter, datasetStorageService?: DatasetStorageService, datasetRecordService?: DatasetRecordService, reportService?: ReportService, publicService?: PublicService, sessionRepository?: AuthSessionRepository): Router {
   const router = Router();
   const resolvedLogService = logService ?? new LogService();
   const resolvedAuthService = authService ?? new AuthService({ logger: resolvedLogService });
@@ -28,13 +30,14 @@ export function createApiRouter(authService?: AuthService, adminService?: AdminM
   const resolvedDatasetRecordService = datasetRecordService ?? new DatasetRecordService({ logger: resolvedLogService });
   const resolvedReportService = reportService ?? new ReportService({ logger: resolvedLogService });
   const resolvedPublicService = publicService ?? new PublicService({ reportService: resolvedReportService });
-  router.use("/auth", createAuthRouter(resolvedAuthService, resolvedAdminService));
-  router.use("/admins", createAdminRouter(resolvedAdminService));
-  router.use("/logs", createLogRouter(resolvedLogService));
-  router.use("/datasets", createDatasetRouter(resolvedDatasetService, undefined, resolvedDatasetStorageService, resolvedDatasetRecordService));
-  router.use("/reports", createReportRouter(resolvedReportService));
+  const authenticateMiddleware = createAuthenticate(sessionRepository ?? resolvedAuthService.getSessionRepository());
+  router.use("/auth", createAuthRouter(resolvedAuthService, resolvedAdminService, authenticateMiddleware));
+  router.use("/admins", createAdminRouter(resolvedAdminService, authenticateMiddleware));
+  router.use("/logs", createLogRouter(resolvedLogService, authenticateMiddleware));
+  router.use("/datasets", createDatasetRouter(resolvedDatasetService, undefined, resolvedDatasetStorageService, resolvedDatasetRecordService, authenticateMiddleware));
+  router.use("/reports", createReportRouter(resolvedReportService, authenticateMiddleware));
   router.use("/public", createPublicRouter(resolvedPublicService));
-  router.use("/databases", createDatabaseRouter(resolvedDatabaseRouter));
+  router.use("/databases", createDatabaseRouter(resolvedDatabaseRouter, authenticateMiddleware));
   router.use("/health", healthRouter);
   return router;
 }

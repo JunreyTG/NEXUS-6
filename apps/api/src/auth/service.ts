@@ -86,6 +86,10 @@ export class AuthService {
     return this.dependencies.config();
   }
 
+  getSessionRepository(): AuthSessionRepository {
+    return this.dependencies.sessions;
+  }
+
   async login(input: LoginInput, metadata: SessionRequestMetadata): Promise<AuthenticationResult> {
     const config = this.dependencies.config();
     const email = input.email.trim().toLowerCase();

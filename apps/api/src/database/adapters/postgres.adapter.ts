@@ -25,6 +25,7 @@ type StoredRow = { record_id: string; record_data: DatabaseRecord };
 
 export class PostgresAdapter extends UnconfiguredDatabaseAdapter {
   readonly engine = "POSTGRESQL" as const;
+  override readonly isImplemented = true;
   private readonly configuration: DatasetDatabaseConfig["POSTGRESQL"];
   private pool: pg.Pool | undefined;
 

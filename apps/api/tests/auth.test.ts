@@ -3,7 +3,7 @@ import express from "express";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AuthService } from "../src/auth/service.js";
-import { requireSuperAdmin, authenticate } from "../src/auth/middleware.js";
+import { requireSuperAdmin, createAuthenticate } from "../src/auth/middleware.js";
 import type { AuthConfig } from "../src/auth/config.js";
 import { AuthSessionRepository } from "../src/repositories/auth-session.repository.js";
 import { createApp } from "../src/app.js";
@@ -29,6 +29,7 @@ type TestState = {
 let state: TestState;
 let config: AuthConfig;
 let app: express.Express;
+let sessionRepository: AuthSessionRepository;
 
 function createTestDatabase() {
   return {
@@ -39,13 +40,13 @@ function createTestDatabase() {
       }
     },
     adminSession: {
-      findUnique: async ({ where }: { where: { refreshTokenHash: string } }) => {
-        const session = state.adminSessions.find((entry) => entry.refreshTokenHash === where.refreshTokenHash);
+      findUnique: async ({ where }: { where: { refreshTokenHash?: string; id?: string } }) => {
+        const session = state.adminSessions.find((entry) => (where.refreshTokenHash ? entry.refreshTokenHash === where.refreshTokenHash : entry.id === where.id));
         return session ? { ...session, admin: state.admin[session.email as string] } : null;
       },
       create: async ({ data }: { data: Record<string, unknown> }) => {
         const session = {
-          id: `admin-session-${++state.sequence}`,
+          id: `00000000-0000-4000-8000-${String(++state.sequence).padStart(12, "0")}`,
           revokedAt: null,
           createdAt: new Date(),
           ...data,
@@ -69,11 +70,11 @@ function createTestDatabase() {
       }
     },
     superAdminSession: {
-      findUnique: async ({ where }: { where: { refreshTokenHash: string } }) =>
-        state.superAdminSessions.find((entry) => entry.refreshTokenHash === where.refreshTokenHash) ?? null,
+      findUnique: async ({ where }: { where: { refreshTokenHash?: string; id?: string } }) =>
+        state.superAdminSessions.find((entry) => (where.refreshTokenHash ? entry.refreshTokenHash === where.refreshTokenHash : entry.id === where.id)) ?? null,
       create: async ({ data }: { data: Record<string, unknown> }) => {
         const session = {
-          id: `super-session-${++state.sequence}`,
+          id: `00000000-0000-4000-8000-${String(++state.sequence).padStart(12, "0")}`,
           revokedAt: null,
           createdAt: new Date(),
           ...data
@@ -169,7 +170,9 @@ beforeAll(async () => {
   process.env.ACCESS_TOKEN_SECRET = config.ACCESS_TOKEN_SECRET;
   process.env.ACCESS_TOKEN_EXPIRES_IN = config.ACCESS_TOKEN_EXPIRES_IN;
   process.env.REFRESH_TOKEN_EXPIRES_DAYS = String(config.REFRESH_TOKEN_EXPIRES_DAYS);
-  app = createApp(createAuthService());
+  const authService = createAuthService();
+  sessionRepository = authService.getSessionRepository();
+  app = createApp(authService);
 });
 
 afterAll(() => {
@@ -273,13 +276,14 @@ describe("authentication endpoints", () => {
 
     expect(logout.status).toBe(204);
     expect((await request(app).post("/api/auth/refresh").set("Cookie", cookie)).status).toBe(401);
+    expect((await request(app).get("/api/auth/me").set("Authorization", `Bearer ${login.body.accessToken}`)).status).toBe(401);
   });
 });
 
 describe("authorization middleware", () => {
   function protectedApp() {
     const protectedApplication = express();
-    protectedApplication.get("/super", authenticate, requireSuperAdmin, (_request, response) => {
+    protectedApplication.get("/super", createAuthenticate(sessionRepository), requireSuperAdmin, (_request, response) => {
       response.status(200).json({ ok: true });
     });
     protectedApplication.use(errorHandler);

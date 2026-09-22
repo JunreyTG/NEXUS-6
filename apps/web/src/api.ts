@@ -42,7 +42,6 @@ export type PublicReport = {
 export type PublicPage<T> = { items: T[]; page: number; pageSize: number; total: number };
 
 export type PublicReportDetail = PublicReport & {
-  configuration: ReportConfiguration;
   dataset: Pick<PublicDataset, "id" | "name" | "description" | "classification" | "recommendedEngine" | "selectedEngine">;
 };
 

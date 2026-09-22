@@ -205,7 +205,6 @@ export class ReportService {
       datasetId: report.datasetId,
       title: report.title,
       description: report.description,
-      configuration: report.configuration,
       visibility: report.visibility,
       createdAt: report.createdAt,
       updatedAt: report.updatedAt,

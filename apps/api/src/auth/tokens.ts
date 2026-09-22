@@ -38,11 +38,13 @@ export async function verifyAccessToken(token: string, config: AuthConfig): Prom
     const role = payload.role;
     const email = payload.email;
     const type = payload.type;
+    const sessionId = payload.jti;
     if (
       (role !== "SUPER_ADMIN" && role !== "ADMIN") ||
       type !== role ||
       typeof email !== "string" ||
-      typeof payload.sub !== "string"
+      typeof payload.sub !== "string" ||
+      typeof sessionId !== "string"
     ) {
       throw new AuthenticationError();
     }
@@ -51,7 +53,8 @@ export async function verifyAccessToken(token: string, config: AuthConfig): Prom
       type: role,
       id: role === "SUPER_ADMIN" ? null : payload.sub,
       email,
-      role
+      role,
+      sessionId
     };
   } catch {
     throw new AuthenticationError();

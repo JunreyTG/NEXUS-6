@@ -1,6 +1,7 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
 import { authenticate, requireSuperAdmin } from "../auth/middleware.js";
+import type { RequestHandler } from "express";
 import { AdminManagementService } from "../services/admin-management.service.js";
 
 function requestActor(request: Request) {
@@ -21,9 +22,9 @@ const createAdminSchema = z.object({
 const patchAdminSchema = createAdminSchema.partial().refine((value) => Object.keys(value).length > 0);
 const statusSchema = z.object({ status: z.enum(["PENDING", "ACTIVE", "DISABLED"]) });
 
-export function createAdminRouter(service = new AdminManagementService()): Router {
+export function createAdminRouter(service = new AdminManagementService(), authenticateMiddleware: RequestHandler = authenticate): Router {
   const router = Router();
-  router.use(authenticate, requireSuperAdmin);
+  router.use(authenticateMiddleware, requireSuperAdmin);
 
   router.post("/", async (request, response, next) => {
     try {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { authenticate, requireAdminOrSuperAdmin } from "../auth/middleware.js";
+import type { RequestHandler } from "express";
 import { LogService } from "../logging/log.service.js";
 
 const querySchema = z.object({
@@ -17,9 +18,9 @@ const querySchema = z.object({
   path: ["start"]
 });
 
-export function createLogRouter(service = new LogService()): Router {
+export function createLogRouter(service = new LogService(), authenticateMiddleware: RequestHandler = authenticate): Router {
   const router = Router();
-  router.use(authenticate, requireAdminOrSuperAdmin);
+  router.use(authenticateMiddleware, requireAdminOrSuperAdmin);
 
   router.get("/login", async (request, response, next) => {
     try {

@@ -21,6 +21,13 @@ export class AuthSessionRepository {
     }));
   }
 
+  findAdminById(id: string) {
+    return databaseOperation(() => this.database().adminSession.findUnique({
+      where: { id },
+      include: { admin: { select: { status: true, emailVerified: true, passwordHash: true } } }
+    }));
+  }
+
   createAdmin(adminId: string, metadata: SessionMetadata) {
     return databaseOperation(() => this.database().adminSession.create({
       data: { adminId, ...metadata }
@@ -45,6 +52,10 @@ export class AuthSessionRepository {
     return databaseOperation(() => this.database().superAdminSession.findUnique({
       where: { refreshTokenHash }
     }));
+  }
+
+  findSuperAdminById(id: string) {
+    return databaseOperation(() => this.database().superAdminSession.findUnique({ where: { id } }));
   }
 
   createSuperAdmin(metadata: SessionMetadata) {

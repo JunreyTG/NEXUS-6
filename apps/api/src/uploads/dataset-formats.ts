@@ -4,6 +4,13 @@ import { UploadValidationError } from "../errors/app-error.js";
 
 export type StructuredRecord = Record<string, unknown>;
 
+const unsafeKeys = new Set(["__proto__", "prototype", "constructor"]);
+
+function rejectUnsafeKeys(record: StructuredRecord): StructuredRecord {
+  if (Object.keys(record).some((key) => unsafeKeys.has(key))) throw new UploadValidationError("MALFORMED_FILE");
+  return record;
+}
+
 export function parseDelimitedRows(text: string, delimiter: string): string[][] {
   if (!text.trim()) throw new UploadValidationError("EMPTY_FILE");
   const rows: string[][] = [];
@@ -50,11 +57,11 @@ export function parseJsonRecords(text: string): StructuredRecord[] {
     throw new UploadValidationError("MALFORMED_FILE");
   }
   if (Array.isArray(value)) {
-    const records = value.filter((item): item is StructuredRecord => Boolean(item && typeof item === "object" && !Array.isArray(item)));
+    const records = value.filter((item): item is StructuredRecord => Boolean(item && typeof item === "object" && !Array.isArray(item))).map(rejectUnsafeKeys);
     if (!records.length) throw new UploadValidationError("EMPTY_FILE");
     return records;
   }
-  if (value && typeof value === "object") return [value as StructuredRecord];
+  if (value && typeof value === "object") return [rejectUnsafeKeys(value as StructuredRecord)];
   throw new UploadValidationError("MALFORMED_FILE");
 }
 
@@ -70,7 +77,7 @@ export function parseNdjsonRecords(text: string): StructuredRecord[] {
       throw new UploadValidationError("MALFORMED_FILE");
     }
     if (!value || typeof value !== "object" || Array.isArray(value)) throw new UploadValidationError("MALFORMED_FILE");
-    records.push(value as StructuredRecord);
+    records.push(rejectUnsafeKeys(value as StructuredRecord));
   }
   if (!records.length) throw new UploadValidationError("EMPTY_FILE");
   return records;
@@ -97,7 +104,7 @@ function deepestSingleObject(value: unknown): StructuredRecord | null {
   return current && typeof current === "object" && !Array.isArray(current) ? (current as StructuredRecord) : null;
 }
 
-const xmlParser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", trimValues: true });
+const xmlParser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", trimValues: true, processEntities: false, htmlEntities: false });
 
 export function parseXmlRecords(text: string): StructuredRecord[] {
   if (!text.trim()) throw new UploadValidationError("EMPTY_FILE");

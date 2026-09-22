@@ -13,6 +13,9 @@ export type AppEnv = z.infer<typeof envSchema>;
 export function parseEnv(source: NodeJS.ProcessEnv): AppEnv {
   const result = envSchema.safeParse(source);
   if (!result.success) throw new Error("Invalid application environment configuration.");
+  if (result.data.NODE_ENV === "production" && (!source.WEB_ORIGIN || result.data.WEB_ORIGIN === "http://localhost:8080" || result.data.WEB_ORIGIN === "*")) {
+    throw new Error("WEB_ORIGIN must be explicitly configured in production.");
+  }
   return result.data;
 }
 

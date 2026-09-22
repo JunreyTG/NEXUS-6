@@ -34,6 +34,10 @@ export class DatabaseRouter {
   }
 
   getStatuses(): DatabaseEngineStatus[] {
-    return getEngineStatuses(getDatasetDatabaseStatuses());
+    const configured = getDatasetDatabaseStatuses();
+    return getEngineStatuses(Object.fromEntries(DATABASE_ENGINES.map((engine) => [
+      engine,
+      configured[engine] === "not_configured" ? "not_configured" : !this.adapters[engine].isImplemented ? "unavailable" : "configured"
+    ])) as Partial<Record<DatabaseEngine, DatabaseEngineStatus["status"]>>);
   }
 }

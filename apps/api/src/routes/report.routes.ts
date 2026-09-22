@@ -1,6 +1,7 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
 import { authenticate, requireAdminOrSuperAdmin } from "../auth/middleware.js";
+import type { RequestHandler } from "express";
 import { ReportService, type ReportActor } from "../services/report.service.js";
 import { reportCreateSchema, reportPatchSchema } from "../reports/schema.js";
 import type { ReportInput, ReportPatchInput } from "../reports/types.js";
@@ -20,9 +21,9 @@ function reportId(request: Request): string {
   return z.string().uuid().parse(request.params.id);
 }
 
-export function createReportRouter(service = new ReportService()): Router {
+export function createReportRouter(service = new ReportService(), authenticateMiddleware: RequestHandler = authenticate): Router {
   const router = Router();
-  router.use(authenticate, requireAdminOrSuperAdmin);
+  router.use(authenticateMiddleware, requireAdminOrSuperAdmin);
 
   router.post("/", async (request, response, next) => {
     try {

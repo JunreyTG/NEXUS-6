@@ -20,6 +20,7 @@ import type {
 
 export abstract class UnconfiguredDatabaseAdapter implements DatabaseAdapter {
   abstract readonly engine: DatabaseEngine;
+  readonly isImplemented: boolean = false;
 
   healthCheck(): Promise<DatabaseHealthResult> {
     return Promise.resolve({ engine: this.engine, status: "not_configured" });

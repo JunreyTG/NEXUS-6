@@ -3,6 +3,7 @@ import { Router, type Request } from "express";
 import { z } from "zod";
 import { REFRESH_COOKIE_NAME, clearRefreshCookie, setRefreshCookie } from "../auth/refresh-token.js";
 import { authenticate } from "../auth/middleware.js";
+import type { RequestHandler } from "express";
 import { AuthService, type SessionRequestMetadata } from "../auth/service.js";
 import { AdminManagementService } from "../services/admin-management.service.js";
 
@@ -24,6 +25,13 @@ const loginRateLimit = rateLimit({
   legacyHeaders: false
 });
 
+const authActionRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 function requestMetadata(request: Request): SessionRequestMetadata {
   const userAgent = request.get("user-agent");
   return {
@@ -32,7 +40,7 @@ function requestMetadata(request: Request): SessionRequestMetadata {
   };
 }
 
-export function createAuthRouter(authService = new AuthService(), adminService = new AdminManagementService()): Router {
+export function createAuthRouter(authService = new AuthService(), adminService = new AdminManagementService(), authenticateMiddleware: RequestHandler = authenticate): Router {
   const router = Router();
 
   router.post("/login", loginRateLimit, async (request, response, next) => {
@@ -47,7 +55,7 @@ export function createAuthRouter(authService = new AuthService(), adminService =
     }
   });
 
-  router.post("/refresh", async (request, response, next) => {
+  router.post("/refresh", authActionRateLimit, async (request, response, next) => {
     try {
       const result = await authService.refresh(request.cookies?.[REFRESH_COOKIE_NAME], requestMetadata(request));
       setRefreshCookie(response, result.refreshToken, authService.getConfig());
@@ -67,11 +75,11 @@ export function createAuthRouter(authService = new AuthService(), adminService =
     }
   });
 
-  router.get("/me", authenticate, (request, response) => {
+  router.get("/me", authenticateMiddleware, (request, response) => {
     response.status(200).json({ email: request.principal!.email, role: request.principal!.role });
   });
 
-  router.get("/verify-email", async (request, response, next) => {
+  router.get("/verify-email", authActionRateLimit, async (request, response, next) => {
     try {
       const token = tokenSchema.parse(request.query.token);
       response.status(200).json({ status: "verified", ...(await adminService.verifyEmail(token)) });
@@ -80,7 +88,7 @@ export function createAuthRouter(authService = new AuthService(), adminService =
     }
   });
 
-  router.post("/set-password", async (request, response, next) => {
+  router.post("/set-password", authActionRateLimit, async (request, response, next) => {
     try {
       const input = setPasswordSchema.parse(request.body);
       response.status(200).json({ status: "active", admin: await adminService.setPassword(input.token, input.password) });

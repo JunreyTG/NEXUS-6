@@ -23,12 +23,12 @@ export class ConsoleEmailProvider implements EmailProvider {
 
   async sendVerificationEmail(message: VerificationEmail): Promise<void> {
     if (this.config.nodeEnv === "production") throw new EmailProviderError();
-    console.info(`[NEXUS-6 email] verification for ${message.to}: ${message.verificationUrl}`);
+    console.info(`[NEXUS-6 email] verification email queued for ${message.to}`);
   }
 
   async sendPasswordResetEmail(message: PasswordSetupEmail): Promise<void> {
     if (this.config.nodeEnv === "production") throw new EmailProviderError();
-    console.info(`[NEXUS-6 email] password setup for ${message.to}: ${message.setupUrl}`);
+    console.info(`[NEXUS-6 email] password setup email queued for ${message.to}`);
   }
 }
 

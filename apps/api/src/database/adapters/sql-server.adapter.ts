@@ -25,6 +25,7 @@ type StoredRow = { record_id: string; record_data: string };
 
 export class SqlServerAdapter extends UnconfiguredDatabaseAdapter {
   readonly engine = "SQLSERVER" as const;
+  override readonly isImplemented = true;
   private readonly configuration: DatasetDatabaseConfig["SQLSERVER"];
   private poolPromise: Promise<ConnectionPool> | undefined;
 

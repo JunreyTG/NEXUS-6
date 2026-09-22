@@ -1,5 +1,5 @@
-const sensitiveKey = /(password|token|secret|api[._-]?key|connection|credential|authorization|cookie)/i;
-const sensitiveValue = /^(bearer\s+|(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis):\/\/)/i;
+const sensitiveKey = /(password|token|secret|api[._-]?key|connection|string|credential|authorization|cookie|username|host|port|database|uri|url|dsn|private[._-]?key)/i;
+const sensitiveValue = /^(bearer\s+|eyJ[a-zA-Z0-9_-]+\.|(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|neo4j|couchbase|sqlserver):\/\/)/i;
 
 export function sanitizeMetadata(value: unknown, key?: string): unknown {
   if (key && sensitiveKey.test(key)) return "[REDACTED]";
