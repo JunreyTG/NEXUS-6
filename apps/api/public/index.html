@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataVault6 - Centralized Dataset Collection System</title>
+  <meta name="description" content="DataVault6 - Centralized dataset collection, exploration, and activity monitoring system.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app-layout" id="appLayout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Brand Logo -->
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="36" height="36" rx="10" fill="url(#logo-gradient)"/>
+            <path d="M18 9C12.477 9 8 10.343 8 12C8 13.657 12.477 15 18 15C23.523 15 28 13.657 28 12C28 10.343 23.523 9 18 9Z" fill="#93C5FD"/>
+            <path d="M28 14.5C28 16.157 23.523 17.5 18 17.5C12.477 17.5 8 16.157 8 14.5V18.5C8 20.157 12.477 21.5 18 21.5C23.523 21.5 28 20.157 28 18.5V14.5Z" fill="#60A5FA"/>
+            <path d="M28 21C28 22.657 23.523 24 18 24C12.477 24 8 22.657 8 21V25C8 26.657 12.477 28 18 28C23.523 28 28 26.657 28 25V21Z" fill="#3B82F6"/>
+            <defs>
+              <linearGradient id="logo-gradient" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#1E3A8A"/>
+                <stop offset="1" stop-color="#2563EB"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">DataVault6</h1>
+          <p class="brand-subtitle">Centralized Dataset Collection System</p>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="sidebar-nav">
+        <!-- Main Dashboard -->
+        <a href="#dashboard" class="nav-item active" id="nav-dashboard">
+          <span class="nav-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+
+        <!-- DATASETS SECTION -->
+        <div class="nav-section-header">DATASETS</div>
+        <a href="#explore" class="nav-item" id="nav-explore">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <span class="nav-label">Explore Datasets</span>
+        </a>
+        <a href="#upload" class="nav-item" id="nav-upload">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </span>
+          <span class="nav-label">Upload Dataset</span>
+        </a>
+        <a href="#my-datasets" class="nav-item" id="nav-my-datasets">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+          </span>
+          <span class="nav-label">My Datasets</span>
+        </a>
+        <a href="#bookmarked" class="nav-item" id="nav-bookmarked">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Bookmarked</span>
+        </a>
+
+        <!-- DATABASES SECTION -->
+        <div class="nav-section-header">DATABASES</div>
+        <a href="#mysql" class="nav-item db-nav-item" data-db="MySQL">
+          <span class="nav-icon db-icon-circle db-01-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">MySQL</span>
+        </a>
+        <a href="#sqlserver" class="nav-item db-nav-item" data-db="SQLServer">
+          <span class="nav-icon db-icon-circle db-02-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">SQLServer</span>
+        </a>
+        <a href="#postgresql" class="nav-item db-nav-item" data-db="PostgreSQL">
+          <span class="nav-icon db-icon-circle db-03-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">PostgreSQL</span>
+        </a>
+        <a href="#mongodb" class="nav-item db-nav-item" data-db="MongoDB">
+          <span class="nav-icon db-icon-circle db-04-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">MongoDB</span>
+        </a>
+        <a href="#neo4j" class="nav-item db-nav-item" data-db="Neo4J">
+          <span class="nav-icon db-icon-circle db-05-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">Neo4J</span>
+        </a>
+        <a href="#couchbase" class="nav-item db-nav-item" data-db="CouchBase">
+          <span class="nav-icon db-icon-circle db-06-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">CouchBase</span>
+        </a>
+
+        <!-- TOOLS SECTION -->
+        <div class="nav-section-header">TOOLS</div>
+        <a href="#search-tool" class="nav-item" id="nav-search-tool">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <span class="nav-label">Search</span>
+        </a>
+        <a href="#analytics-tool" class="nav-item" id="nav-analytics-tool">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </span>
+          <span class="nav-label">Analytics</span>
+        </a>
+        <a href="#requests-tool" class="nav-item" id="nav-requests-tool">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </span>
+          <span class="nav-label">Data Requests</span>
+        </a>
+
+        <!-- ACCOUNT SECTION -->
+        <div class="nav-section-header">ACCOUNT</div>
+        <a href="#profile" class="nav-item" id="nav-profile">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </span>
+          <span class="nav-label">Profile</span>
+        </a>
+        <a href="#settings" class="nav-item" id="nav-settings">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Wave Graphic -->
+      <div class="sidebar-wave">
+        <svg viewBox="0 0 240 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 60C50 30 100 70 160 40C200 20 220 50 240 60V80H0V60Z" fill="url(#wave-gradient)" opacity="0.6"/>
+          <path d="M0 70C60 45 120 75 180 50C210 38 230 60 240 70V80H0V70Z" fill="url(#wave-gradient-2)" opacity="0.8"/>
+          <defs>
+            <linearGradient id="wave-gradient" x1="0" y1="20" x2="240" y2="80" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#3B82F6"/>
+              <stop offset="1" stop-color="#1D4ED8"/>
+            </linearGradient>
+            <linearGradient id="wave-gradient-2" x1="0" y1="40" x2="240" y2="80" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#60A5FA"/>
+              <stop offset="1" stop-color="#2563EB"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </aside>
+
+    <!-- MAIN BODY AREA (Header + Content + Right Panel) -->
+    <div class="main-wrapper">
+      <!-- TOP NAVIGATION BAR -->
+      <header class="top-header">
+        <!-- Global Search Bar -->
+        <div class="search-box">
+          <span class="search-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <input type="text" id="globalSearchInput" placeholder="Search datasets, keywords, contributors...." autocomplete="off">
+          <span class="search-shortcut">Ctrl + K</span>
+        </div>
+
+        <!-- Top Header Actions -->
+        <div class="header-actions">
+          <!-- Dark Mode Toggle -->
+          <button class="icon-btn" id="themeToggleBtn" title="Toggle Theme" aria-label="Toggle theme">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+
+          <!-- Notification Bell with Badge -->
+          <div class="notification-wrapper">
+            <button class="icon-btn" id="notificationBtn" title="Notifications" aria-label="Notifications">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <span class="notification-badge" id="notificationCount">3</span>
+            </button>
+          </div>
+
+          <!-- User Profile Chip -->
+          <div class="user-chip" id="userProfileChip">
+            <div class="user-avatar">
+              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%233B82F6'/%3E%3Cpath d='M32 34a12 12 0 1 0 0-24 12 12 0 0 0 0 24zm0 6c-13.3 0-24 8.7-24 18v2h48v-2c0-9.3-10.7-18-24-18z' fill='%23FFFFFF'/%3E%3C/svg%3E" alt="JLee">
+            </div>
+            <div class="user-details">
+              <span class="user-name">JLee</span>
+              <span class="user-role">Data Contributor</span>
+            </div>
+            <svg class="chevron-down" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+        </div>
+      </header>
+
+      <!-- TWO-COLUMN WORKSPACE: Center Content + Right Sidebar Panel -->
+      <div class="dashboard-grid">
+        <!-- CENTER MAIN CONTENT -->
+        <main class="center-content">
+          <!-- HERO BANNER -->
+          <section class="hero-banner">
+            <div class="hero-text">
+              <h2 class="hero-greeting">Good morning, JLee!</h2>
+              <p class="hero-subtext">Discover, contribute, and manage datasets all in one place.</p>
+            </div>
+            <div class="hero-illustration">
+              <svg width="220" height="140" viewBox="0 0 220 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- 3D Database Cylinders & Floating Cards -->
+                <g filter="url(#glow)">
+                  <!-- Main Cylinder Back -->
+                  <ellipse cx="140" cy="40" rx="38" ry="16" fill="#60A5FA"/>
+                  <path d="M102 40v30c0 8.8 17 16 38 16s38-7.2 38-16V40z" fill="#3B82F6"/>
+                  <ellipse cx="140" cy="70" rx="38" ry="16" fill="#60A5FA"/>
+                  <path d="M102 70v30c0 8.8 17 16 38 16s38-7.2 38-16V70z" fill="#2563EB"/>
+                  <ellipse cx="140" cy="100" rx="38" ry="16" fill="#93C5FD"/>
+                  <!-- Floating holographic cards -->
+                  <rect x="25" y="45" width="65" height="45" rx="6" fill="#1E3A8A" fill-opacity="0.8" stroke="#93C5FD" stroke-width="1.5"/>
+                  <line x1="35" y1="58" x2="65" y2="58" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="35" y1="68" x2="75" y2="68" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="35" y1="76" x2="55" y2="76" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
+
+                  <rect x="155" y="20" width="55" height="40" rx="6" fill="#1E3A8A" fill-opacity="0.85" stroke="#BFDBFE" stroke-width="1.5"/>
+                  <line x1="165" y1="32" x2="195" y2="32" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="165" y1="40" x2="185" y2="40" stroke="#60A5FA" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="165" y1="48" x2="200" y2="48" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
+                </g>
+                <defs>
+                  <filter id="glow" x="0" y="0" width="220" height="140" filterUnits="userSpaceOnUse">
+                    <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#1D4ED8" flood-opacity="0.3"/>
+                  </filter>
+                </defs>
+              </svg>
+            </div>
+          </section>
+
+          <!-- 4 KPI SUMMARY METRICS -->
+          <section class="metrics-row">
+            <!-- Card 1: Total Datasets -->
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <div class="metric-value" id="kpiTotalDatasets">1,248</div>
+                <div class="metric-label">Total Datasets</div>
+                <div class="metric-trend trend-up">
+                  <span class="trend-arrow">&uarr;</span> 12% <span class="trend-sub">vs. last month</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Total Contributors -->
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-green">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <div class="metric-value" id="kpiTotalContributors">386</div>
+                <div class="metric-label">Total Contributors</div>
+                <div class="metric-trend trend-up">
+                  <span class="trend-arrow">&uarr;</span> 8% <span class="trend-sub">vs. last month</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Categories -->
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-purple">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <div class="metric-value" id="kpiCategories">52</div>
+                <div class="metric-label">Categories</div>
+                <div class="metric-trend trend-up">
+                  <span class="trend-arrow">&uarr;</span> 5% <span class="trend-sub">vs. last month</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Total Downloads -->
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-cyan">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <div class="metric-value" id="kpiTotalDownloads">18,492</div>
+                <div class="metric-label">Total Downloads</div>
+                <div class="metric-trend trend-up">
+                  <span class="trend-arrow">&uarr;</span> 20% <span class="trend-sub">vs. last month</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- MIDDLE ROW: TWO CHARTS -->
+          <section class="charts-row">
+            <!-- Chart 1: Dataset Activity Area Chart -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <h3 class="chart-title">Dataset Activity</h3>
+                <div class="dropdown-filter">
+                  <select id="activityPeriodSelect" aria-label="Dataset activity timeframe">
+                    <option value="7">Last 7 days</option>
+                    <option value="14">Last 14 days</option>
+                    <option value="30">Last 30 days</option>
+                  </select>
+                </div>
+              </div>
+              <div class="chart-canvas-container" id="activityChartContainer">
+                <!-- SVG Area/Line Chart -->
+                <svg class="activity-svg" viewBox="0 0 460 210" preserveAspectRatio="none">
+                  <!-- Grid Lines & Labels -->
+                  <g class="grid-lines">
+                    <line x1="35" y1="20" x2="445" y2="20" stroke="var(--grid-color)" stroke-dasharray="3 3"/>
+                    <text x="5" y="24" class="axis-label">400</text>
+
+                    <line x1="35" y1="60" x2="445" y2="60" stroke="var(--grid-color)" stroke-dasharray="3 3"/>
+                    <text x="5" y="64" class="axis-label">300</text>
+
+                    <line x1="35" y1="100" x2="445" y2="100" stroke="var(--grid-color)" stroke-dasharray="3 3"/>
+                    <text x="5" y="104" class="axis-label">200</text>
+
+                    <line x1="35" y1="140" x2="445" y2="140" stroke="var(--grid-color)" stroke-dasharray="3 3"/>
+                    <text x="5" y="144" class="axis-label">100</text>
+
+                    <line x1="35" y1="180" x2="445" y2="180" stroke="var(--grid-color)"/>
+                    <text x="15" y="184" class="axis-label">0</text>
+                  </g>
+
+                  <!-- Gradient Definition -->
+                  <defs>
+                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="180" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.35"/>
+                      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.0"/>
+                    </linearGradient>
+                  </defs>
+
+                  <!-- Filled Area -->
+                  <path d="M 45 158 Q 75 130, 110 135 T 175 105 T 240 128 T 305 65 T 370 102 T 435 55 L 435 180 L 45 180 Z" fill="url(#areaGradient)"/>
+
+                  <!-- Stroke Line -->
+                  <path class="chart-stroke" d="M 45 158 Q 75 130, 110 135 T 175 105 T 240 128 T 305 65 T 370 102 T 435 55" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+
+                  <!-- Data Points with Tooltip Triggers -->
+                  <g class="chart-points">
+                    <circle cx="45" cy="158" r="4.5" class="chart-dot" data-val="78" data-date="Sep 16"/>
+                    <circle cx="110" cy="135" r="4.5" class="chart-dot" data-val="145" data-date="Sep 17"/>
+                    <circle cx="175" cy="105" r="4.5" class="chart-dot" data-val="215" data-date="Sep 18"/>
+                    <circle cx="240" cy="128" r="4.5" class="chart-dot" data-val="160" data-date="Sep 19"/>
+                    <circle cx="305" cy="65" r="4.5" class="chart-dot" data-val="325" data-date="Sep 20"/>
+                    <circle cx="370" cy="102" r="4.5" class="chart-dot" data-val="220" data-date="Sep 21"/>
+                    <circle cx="435" cy="55" r="4.5" class="chart-dot" data-val="340" data-date="Sep 22"/>
+                  </g>
+
+                  <!-- X-Axis Labels -->
+                  <g class="x-axis-labels">
+                    <text x="32" y="202" class="axis-label">Sep 16</text>
+                    <text x="97" y="202" class="axis-label">Sep 17</text>
+                    <text x="162" y="202" class="axis-label">Sep 18</text>
+                    <text x="227" y="202" class="axis-label">Sep 19</text>
+                    <text x="292" y="202" class="axis-label">Sep 20</text>
+                    <text x="357" y="202" class="axis-label">Sep 21</text>
+                    <text x="420" y="202" class="axis-label">Sep 22</text>
+                  </g>
+                </svg>
+                <div class="chart-tooltip" id="chartTooltip"></div>
+              </div>
+            </div>
+
+            <!-- Chart 2: Datasets by Database Donut Chart -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <h3 class="chart-title">Datasets by Database</h3>
+              </div>
+              <div class="donut-chart-layout">
+                <!-- SVG Donut Chart with Center Label -->
+                <div class="donut-visual-wrap">
+                  <svg class="donut-svg" viewBox="0 0 160 160">
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#E2E8F0" stroke-width="24"/>
+                    <!-- MySQL (26%) #2563EB -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#2563EB" stroke-width="24" stroke-dasharray="88 251" stroke-dashoffset="0" class="donut-segment" data-db="MySQL" data-count="324 (26%)"/>
+                    <!-- SQLServer (15%) #10B981 -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#10B981" stroke-width="24" stroke-dasharray="51 288" stroke-dashoffset="-88" class="donut-segment" data-db="SQLServer" data-count="182 (15%)"/>
+                    <!-- PostgreSQL (17%) #06B6D4 -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#06B6D4" stroke-width="24" stroke-dasharray="58 281" stroke-dashoffset="-139" class="donut-segment" data-db="PostgreSQL" data-count="215 (17%)"/>
+                    <!-- MongoDB (13%) #F43F5E -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#F43F5E" stroke-width="24" stroke-dasharray="44 295" stroke-dashoffset="-197" class="donut-segment" data-db="MongoDB" data-count="156 (13%)"/>
+                    <!-- Neo4J (23%) #8B5CF6 -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#8B5CF6" stroke-width="24" stroke-dasharray="78 261" stroke-dashoffset="-241" class="donut-segment" data-db="Neo4J" data-count="291 (23%)"/>
+                    <!-- CouchBase (6%) #14B8A6 -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#14B8A6" stroke-width="24" stroke-dasharray="20 319" stroke-dashoffset="-319" class="donut-segment" data-db="CouchBase" data-count="80 (6%)"/>
+                  </svg>
+                  <div class="donut-center-info">
+                    <span class="donut-total" id="donutTotalDatasets">1,248</span>
+                    <span class="donut-sub">Total Datasets</span>
+                  </div>
+                </div>
+
+                <!-- Donut Legend List -->
+                <div class="donut-legend">
+                  <div class="legend-row" data-db="MySQL">
+                    <span class="legend-dot dot-db01"></span>
+                    <span class="legend-name">MySQL</span>
+                    <span class="legend-stat">324 (26%)</span>
+                  </div>
+                  <div class="legend-row" data-db="SQLServer">
+                    <span class="legend-dot dot-db02"></span>
+                    <span class="legend-name">SQLServer</span>
+                    <span class="legend-stat">182 (15%)</span>
+                  </div>
+                  <div class="legend-row" data-db="PostgreSQL">
+                    <span class="legend-dot dot-db03"></span>
+                    <span class="legend-name">PostgreSQL</span>
+                    <span class="legend-stat">215 (17%)</span>
+                  </div>
+                  <div class="legend-row" data-db="MongoDB">
+                    <span class="legend-dot dot-db04"></span>
+                    <span class="legend-name">MongoDB</span>
+                    <span class="legend-stat">156 (13%)</span>
+                  </div>
+                  <div class="legend-row" data-db="Neo4J">
+                    <span class="legend-dot dot-db05"></span>
+                    <span class="legend-name">Neo4J</span>
+                    <span class="legend-stat">291 (23%)</span>
+                  </div>
+                  <div class="legend-row" data-db="CouchBase">
+                    <span class="legend-dot dot-db06"></span>
+                    <span class="legend-name">CouchBase</span>
+                    <span class="legend-stat">80 (6%)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- RECENT DATASETS TABLE -->
+          <section class="table-card">
+            <div class="table-card-header">
+              <h3 class="table-title">Recent Datasets</h3>
+              <a href="#view-all-datasets" class="view-all-link" id="viewAllDatasetsLink">View all &rarr;</a>
+            </div>
+
+            <div class="table-responsive">
+              <table class="datasets-table" id="recentDatasetsTable">
+                <thead>
+                  <tr>
+                    <th>Dataset Name</th>
+                    <th>Database</th>
+                    <th>Category</th>
+                    <th>Format</th>
+                    <th>Size</th>
+                    <th>Updated By</th>
+                    <th>Updated</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="datasetsTableBody">
+                  <!-- Row 1 -->
+                  <tr data-id="ds-1" data-name="Student Enrollment Dataset" data-db="MySQL">
+                    <td>
+                      <div class="dataset-name-cell">
+                        <div class="doc-icon icon-blue">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        </div>
+                        <div class="dataset-meta">
+                          <div class="dataset-title">Student Enrollment Dataset</div>
+                          <div class="dataset-desc">University student enrollment records</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-db01">MySQL</span></td>
+                    <td><span class="category-text">Education</span></td>
+                    <td><span class="badge badge-format-csv">CSV</span></td>
+                    <td><span class="size-text">24.5 MB</span></td>
+                    <td>
+                      <div class="contributor-cell">
+                        <span class="avatar-small avatar-john">JD</span>
+                        <span class="contributor-name">John D.</span>
+                      </div>
+                    </td>
+                    <td><span class="time-text">2 hours ago</span></td>
+                    <td>
+                      <button class="action-dots-btn" aria-label="Dataset Actions" data-action-id="ds-1">&vellip;</button>
+                    </td>
+                  </tr>
+
+                  <!-- Row 2 -->
+                  <tr data-id="ds-2" data-name="Weather Data 2026" data-db="PostgreSQL">
+                    <td>
+                      <div class="dataset-name-cell">
+                        <div class="doc-icon icon-green">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        </div>
+                        <div class="dataset-meta">
+                          <div class="dataset-title">Weather Data 2026</div>
+                          <div class="dataset-desc">Historical weather data for Tawi-Tawi</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-db03">PostgreSQL</span></td>
+                    <td><span class="category-text">Environment</span></td>
+                    <td><span class="badge badge-format-xlsx">XLSX</span></td>
+                    <td><span class="size-text">45.2 MB</span></td>
+                    <td>
+                      <div class="contributor-cell">
+                        <span class="avatar-small avatar-maria">MS</span>
+                        <span class="contributor-name">Maria S.</span>
+                      </div>
+                    </td>
+                    <td><span class="time-text">5 hours ago</span></td>
+                    <td>
+                      <button class="action-dots-btn" aria-label="Dataset Actions" data-action-id="ds-2">&vellip;</button>
+                    </td>
+                  </tr>
+
+                  <!-- Row 3 -->
+                  <tr data-id="ds-3" data-name="Traffic Accident Records" data-db="SQLServer">
+                    <td>
+                      <div class="dataset-name-cell">
+                        <div class="doc-icon icon-amber">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        </div>
+                        <div class="dataset-meta">
+                          <div class="dataset-title">Traffic Accident Records</div>
+                          <div class="dataset-desc">Road accident data and locations</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-db02">SQLServer</span></td>
+                    <td><span class="category-text">Transportation</span></td>
+                    <td><span class="badge badge-format-csv">CSV</span></td>
+                    <td><span class="size-text">12.8 MB</span></td>
+                    <td>
+                      <div class="contributor-cell">
+                        <span class="avatar-small avatar-rizal">RT</span>
+                        <span class="contributor-name">Rizal T.</span>
+                      </div>
+                    </td>
+                    <td><span class="time-text">1 day ago</span></td>
+                    <td>
+                      <button class="action-dots-btn" aria-label="Dataset Actions" data-action-id="ds-3">&vellip;</button>
+                    </td>
+                  </tr>
+
+                  <!-- Row 4 -->
+                  <tr data-id="ds-4" data-name="Population Statistics" data-db="MongoDB">
+                    <td>
+                      <div class="dataset-name-cell">
+                        <div class="doc-icon icon-pink">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        </div>
+                        <div class="dataset-meta">
+                          <div class="dataset-title">Population Statistics</div>
+                          <div class="dataset-desc">Municipal population data</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-db04">MongoDB</span></td>
+                    <td><span class="category-text">Demographics</span></td>
+                    <td><span class="badge badge-format-json">JSON</span></td>
+                    <td><span class="size-text">8.4 MB</span></td>
+                    <td>
+                      <div class="contributor-cell">
+                        <span class="avatar-small avatar-ana">AP</span>
+                        <span class="contributor-name">Ana P.</span>
+                      </div>
+                    </td>
+                    <td><span class="time-text">1 day ago</span></td>
+                    <td>
+                      <button class="action-dots-btn" aria-label="Dataset Actions" data-action-id="ds-4">&vellip;</button>
+                    </td>
+                  </tr>
+
+                  <!-- Row 5 -->
+                  <tr data-id="ds-5" data-name="Sales Report 2026" data-db="Neo4J">
+                    <td>
+                      <div class="dataset-name-cell">
+                        <div class="doc-icon icon-teal">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        </div>
+                        <div class="dataset-meta">
+                          <div class="dataset-title">Sales Report 2026</div>
+                          <div class="dataset-desc">Monthly sales and revenue data</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-db05">Neo4J</span></td>
+                    <td><span class="category-text">Business</span></td>
+                    <td><span class="badge badge-format-xlsx">XLSX</span></td>
+                    <td><span class="size-text">32.6 MB</span></td>
+                    <td>
+                      <div class="contributor-cell">
+                        <span class="avatar-small avatar-carlos">CM</span>
+                        <span class="contributor-name">Carlos M.</span>
+                      </div>
+                    </td>
+                    <td><span class="time-text">2 days ago</span></td>
+                    <td>
+                      <button class="action-dots-btn" aria-label="Dataset Actions" data-action-id="ds-5">&vellip;</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+
+        <!-- RIGHT SIDEBAR PANEL -->
+        <aside class="right-panel">
+          <!-- DATABASE CENTER -->
+          <section class="panel-section">
+            <div class="panel-header">
+              <h3 class="panel-title">Database Center</h3>
+              <a href="#database-center" class="view-all-link" id="viewAllDatabasesLink">View all &rarr;</a>
+            </div>
+
+            <!-- 6 Database Cards Grid (2 columns) -->
+            <div class="db-cards-grid">
+              <!-- DB 01 -->
+              <div class="db-card card-db01" data-db-name="MySQL">
+                <div class="db-card-icon icon-db01">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">MySQL</div>
+                <div class="db-card-count">324 datasets</div>
+                <div class="db-card-size">4.2 GB</div>
+                <button class="btn-db-explore explore-db01" data-explore-db="MySQL">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 02 -->
+              <div class="db-card card-db02" data-db-name="SQLServer">
+                <div class="db-card-icon icon-db02">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">SQLServer</div>
+                <div class="db-card-count">182 datasets</div>
+                <div class="db-card-size">2.8 GB</div>
+                <button class="btn-db-explore explore-db02" data-explore-db="SQLServer">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 03 -->
+              <div class="db-card card-db03" data-db-name="PostgreSQL">
+                <div class="db-card-icon icon-db03">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">PostgreSQL</div>
+                <div class="db-card-count">215 datasets</div>
+                <div class="db-card-size">3.1 GB</div>
+                <button class="btn-db-explore explore-db03" data-explore-db="PostgreSQL">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 04 -->
+              <div class="db-card card-db04" data-db-name="MongoDB">
+                <div class="db-card-icon icon-db04">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">MongoDB</div>
+                <div class="db-card-count">156 datasets</div>
+                <div class="db-card-size">1.9 GB</div>
+                <button class="btn-db-explore explore-db04" data-explore-db="MongoDB">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 05 -->
+              <div class="db-card card-db05" data-db-name="Neo4J">
+                <div class="db-card-icon icon-db05">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">Neo4J</div>
+                <div class="db-card-count">291 datasets</div>
+                <div class="db-card-size">5.7 GB</div>
+                <button class="btn-db-explore explore-db05" data-explore-db="Neo4J">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 06 -->
+              <div class="db-card card-db06" data-db-name="CouchBase">
+                <div class="db-card-icon icon-db06">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">CouchBase</div>
+                <div class="db-card-count">80 datasets</div>
+                <div class="db-card-size">1.2 GB</div>
+                <button class="btn-db-explore explore-db06" data-explore-db="CouchBase">Explore &rarr;</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- QUICK ACTIONS -->
+          <section class="panel-section">
+            <h3 class="panel-title" style="margin-bottom: 12px;">Quick Actions</h3>
+            <div class="quick-actions-grid">
+              <!-- Upload Dataset (Primary Blue) -->
+              <button class="btn-quick quick-upload" id="btnQuickUpload">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>Upload Dataset</span>
+              </button>
+
+              <!-- Explore Datasets (Soft Blue) -->
+              <button class="btn-quick quick-explore" id="btnQuickExplore">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <span>Explore Datasets</span>
+              </button>
+
+              <!-- My Datasets (Soft Green) -->
+              <button class="btn-quick quick-my-datasets" id="btnQuickMyDatasets">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <span>My Datasets</span>
+              </button>
+
+              <!-- View Analytics (Soft Pink) -->
+              <button class="btn-quick quick-analytics" id="btnQuickAnalytics">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                <span>View Analytics</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- ACTIVITY FEED (Activity Logs: Specifically System Operations, NOT Login/Logout) -->
+          <section class="panel-section">
+            <div class="panel-header">
+              <div class="feed-header-wrap">
+                <h3 class="panel-title">Activity Feed</h3>
+                <span class="system-logs-tag" title="Only internal system activity is recorded (Authentication/Login records are excluded)">System Logs</span>
+              </div>
+              <a href="#activity-logs" class="view-all-link" id="viewAllActivityLink">View all &rarr;</a>
+            </div>
+
+            <!-- Activity Items List -->
+            <div class="activity-feed-list" id="activityFeedList">
+              <!-- Activity 1 -->
+              <div class="activity-item">
+                <div class="activity-avatar avatar-maria">MS</div>
+                <div class="activity-info">
+                  <div class="activity-text">
+                    <strong>Maria S.</strong> uploaded a new dataset <span class="activity-target">Weather Data 2026</span>
+                  </div>
+                  <div class="activity-time">5 hours ago</div>
+                </div>
+              </div>
+
+              <!-- Activity 2 -->
+              <div class="activity-item">
+                <div class="activity-avatar avatar-rizal">RT</div>
+                <div class="activity-info">
+                  <div class="activity-text">
+                    <strong>Rizal T.</strong> uploaded a dataset <span class="activity-target">Traffic Accident Records</span>
+                  </div>
+                  <div class="activity-time">1 day ago</div>
+                </div>
+              </div>
+
+              <!-- Activity 3 -->
+              <div class="activity-item">
+                <div class="activity-avatar avatar-ana">AP</div>
+                <div class="activity-info">
+                  <div class="activity-text">
+                    <strong>Ana P.</strong> uploaded a new dataset <span class="activity-target">Population Statistics</span>
+                  </div>
+                  <div class="activity-time">2 days ago</div>
+                </div>
+              </div>
+
+              <!-- Activity 4 -->
+              <div class="activity-item">
+                <div class="activity-avatar avatar-carlos">CM</div>
+                <div class="activity-info">
+                  <div class="activity-text">
+                    <strong>Carlos M.</strong> commented on a dataset <span class="activity-target">Sales Report 2026</span>
+                  </div>
+                  <div class="activity-time">2 days ago</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: UPLOAD DATASET -->
+  <div class="modal-overlay" id="uploadModal" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Upload Dataset to DataVault6</h3>
+        <button class="modal-close-btn" id="closeUploadModal">&times;</button>
+      </div>
+      <form id="uploadDatasetForm">
+        <div class="form-group">
+          <label for="datasetNameInput">Dataset Name *</label>
+          <input type="text" id="datasetNameInput" required placeholder="e.g., Global Economic Index 2026">
+        </div>
+        <div class="form-group">
+          <label for="datasetDescInput">Description *</label>
+          <textarea id="datasetDescInput" rows="2" required placeholder="Brief description of the dataset contents and context"></textarea>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="datasetCategoryInput">Category</label>
+            <select id="datasetCategoryInput">
+              <option value="Education">Education</option>
+              <option value="Environment">Environment</option>
+              <option value="Transportation">Transportation</option>
+              <option value="Demographics">Demographics</option>
+              <option value="Business">Business</option>
+              <option value="Finance">Finance</option>
+              <option value="Healthcare">Healthcare</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="datasetTargetDbInput">Target Database Engine</label>
+            <select id="datasetTargetDbInput">
+              <option value="MySQL">MySQL</option>
+              <option value="SQLServer">SQLServer</option>
+              <option value="PostgreSQL">PostgreSQL</option>
+              <option value="MongoDB">MongoDB</option>
+              <option value="Neo4J">Neo4J</option>
+              <option value="CouchBase">CouchBase</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="datasetFormatInput">File Format</label>
+            <select id="datasetFormatInput">
+              <option value="CSV">CSV</option>
+              <option value="XLSX">XLSX</option>
+              <option value="JSON">JSON</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="datasetSizeInput">Estimated Size</label>
+            <input type="text" id="datasetSizeInput" placeholder="e.g. 15.4 MB" value="16.2 MB">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="cancelUploadBtn">Cancel</button>
+          <button type="submit" class="btn-primary" id="submitUploadBtn">
+            <span>Upload & Record Activity</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SYSTEM ACTIVITY LOGS VIEWER (Explicitly tracks internal activities, NOT logins/logouts) -->
+  <div class="modal-overlay" id="activityLogsModal" style="display: none;">
+    <div class="modal-box modal-wide">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">System Activity Logs</h3>
+          <p class="modal-subtitle">Tracking all operational events, dataset uploads, queries, and system modifications inside DataVault6</p>
+        </div>
+        <button class="modal-close-btn" id="closeActivityLogsModal">&times;</button>
+      </div>
+
+      <!-- System Activity Logs Policy Banner -->
+      <div class="logs-banner">
+        <div class="banner-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </div>
+        <div class="banner-text">
+          <strong>Internal Activity Logs Policy:</strong> This stream records exclusively operational and data management events (Dataset Ingestion, Storage Mounting, Schema Sync, Record Operations, and Analytics Queries). <em>User authentication, login, and logout events are completely isolated in separate security logs and excluded from this view.</em>
+        </div>
+      </div>
+
+      <!-- Filters Toolbar -->
+      <div class="logs-toolbar">
+        <div class="logs-filter-group">
+          <button class="filter-chip active" data-filter="ALL">All System Activities</button>
+          <button class="filter-chip" data-filter="UPLOAD">Dataset Uploads</button>
+          <button class="filter-chip" data-filter="STORAGE">Storage & DB Ops</button>
+          <button class="filter-chip" data-filter="QUERY">Queries & Exports</button>
+          <button class="filter-chip" data-filter="COMMENT">Comments & Revisions</button>
+        </div>
+        <div class="logs-search">
+          <input type="text" id="logsSearchInput" placeholder="Filter activity records...">
+        </div>
+      </div>
+
+      <!-- Activity Logs Table -->
+      <div class="logs-table-wrapper">
+        <table class="logs-table" id="fullLogsTable">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Actor</th>
+              <th>Action Type</th>
+              <th>Target Resource</th>
+              <th>Details</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="fullLogsTableBody">
+            <!-- Populated dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="logs-modal-footer">
+        <span class="logs-count-info" id="logsCountInfo">Showing 8 recorded system activities</span>
+        <div class="logs-footer-actions">
+          <button class="btn-secondary" id="btnSimulateActivity">Simulate Activity</button>
+          <button class="btn-primary" id="btnExportLogs">Export Logs (JSON)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
