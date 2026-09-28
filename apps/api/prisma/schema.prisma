@@ -144,7 +144,10 @@ model AdminPasswordSetupToken {
 
 model Dataset {
   id                String                @id @default(uuid()) @db.Uuid
-  ownerAdminId      String                @db.Uuid
+  ownerAdminId      String?               @db.Uuid
+  category          String                @default("Education")
+  contributorName   String?
+  contributorEmail  String?
   name              String
   description       String?
   originalFilename  String?
@@ -160,15 +163,17 @@ model Dataset {
   temporaryFileKey  String?
   createdAt         DateTime              @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime              @updatedAt @db.Timestamptz(3)
-  owner             Admin                 @relation(fields: [ownerAdminId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  owner             Admin?                @relation(fields: [ownerAdminId], references: [id], onDelete: SetNull, onUpdate: Restrict)
   location          DatasetLocation?
   analysis          DatasetAnalysis?
   reports           Report[]
+  bookmarks         Bookmark[]
 
   @@index([ownerAdminId])
   @@index([status])
   @@index([visibility])
   @@index([selectedEngine])
+  @@index([category])
   @@index([createdAt])
 }
 
@@ -222,4 +227,31 @@ model SystemSetting {
   value     Json
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Bookmark {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String
+  datasetId String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@unique([userId, datasetId])
+  @@index([userId])
+  @@index([datasetId])
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?
+  title     String
+  message   String
+  type      String   @default("INFO")
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
 }

@@ -34,9 +34,9 @@ export function createAdminRouter(service = new AdminManagementService(), authen
     }
   });
 
-  router.get("/", async (_request, response, next) => {
+  router.get("/", async (request, response, next) => {
     try {
-      response.status(200).json(await service.listAdmins());
+      response.status(200).json(await service.listAdmins(requestActor(request)));
     } catch (error) {
       next(error);
     }
@@ -44,7 +44,7 @@ export function createAdminRouter(service = new AdminManagementService(), authen
 
   router.get("/:id", async (request, response, next) => {
     try {
-      response.status(200).json(await service.getAdmin(idSchema.parse(request.params.id)));
+      response.status(200).json(await service.getAdmin(idSchema.parse(request.params.id), requestActor(request)));
     } catch (error) {
       next(error);
     }

@@ -474,15 +474,233 @@ paths:
       operationId: listDatasets
       security:
         - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive search across name, description, category, database, format, and contributor
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Education, Environment, Transportation, Demographics, Business, Finance, Healthcare]
+        - name: database
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by target database engine (MySQL, SQLServer, PostgreSQL, MongoDB, Neo4J, CouchBase)
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [CSV, JSON, XLSX]
+        - name: contributor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by contributor name, email, or id
+        - name: contributorId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [name, category, created, updated, size, records, contributor]
+            default: created
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
       responses:
         "200":
-          description: Dataset metadata visible to the authenticated user.
+          description: Paginated dataset metadata visible to the authenticated user.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Dataset"
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Dataset"
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+                  totalPages:
+                    type: integer
+  /api/datasets/mine:
+    get:
+      summary: List datasets uploaded by the currently authenticated user
+      operationId: listMyDatasets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Datasets belonging to the authenticated user.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Dataset"
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+                  totalPages:
+                    type: integer
+  /api/datasets/statistics/categories:
+    get:
+      summary: Category and database engine distribution statistics
+      operationId: getCategoryStatistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dataset distribution across categories and database engines.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalDatasets:
+                    type: integer
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                        count:
+                          type: integer
+                        percentage:
+                          type: number
+                  databaseEngines:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        database:
+                          type: string
+                        count:
+                          type: integer
+                        percentage:
+                          type: number
+  /api/datasets/statistics/contributors:
+    get:
+      summary: Contributor statistics and recent upload activity
+      operationId: getContributorStatistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Contributor upload metrics and recent activity.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalContributors:
+                    type: integer
+                  totalDatasets:
+                    type: integer
+                  contributors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        email:
+                          type: string
+                        datasetCount:
+                          type: integer
+                  recentActivity:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        datasetId:
+                          type: string
+                        datasetName:
+                          type: string
+                        category:
+                          type: string
+                        contributorName:
+                          type: string
+                        contributorEmail:
+                          type: string
+                        createdAt:
+                          type: string
   /api/datasets/{id}:
     parameters:
       - name: id
@@ -631,6 +849,92 @@ paths:
                 $ref: "#/components/schemas/DatasetStorageStatus"
         "403":
           description: Dataset ownership denied.
+  /api/datasets/{id}/download:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Unique identifier of the dataset (UUID).
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Download or export dataset in CSV, JSON, or XLSX format
+      description: |
+        Retrieves records from the dataset's assigned database engine (MySQL, SQL Server, PostgreSQL, MongoDB, Couchbase, Neo4j)
+        and converts them into the requested file format. Automatically logs a DATASET_EXPORTED activity event.
+      operationId: downloadDataset
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          required: false
+          description: Desired export format. Supported formats are csv, json, xlsx. Defaults to csv.
+          schema:
+            type: string
+            enum: [csv, json, xlsx]
+            default: csv
+      responses:
+        "200":
+          description: Dataset file stream with attachment disposition.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="student-enrollment.csv"'
+            Content-Type:
+              schema:
+                type: string
+                example: text/csv; charset=utf-8
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid dataset ID or unsupported export format.
+        "401":
+          description: Authentication required.
+        "403":
+          description: Access denied to private dataset.
+        "404":
+          description: Dataset not found.
+        "503":
+          description: Dataset storage is not configured yet or database engine unavailable.
+  /api/datasets/{id}/export:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Unique identifier of the dataset (UUID).
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Export dataset (alias to /download)
+      operationId: exportDatasetAlias
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [csv, json, xlsx]
+            default: csv
+      responses:
+        "200":
+          description: Dataset file stream.
   /api/datasets/{id}/records:
     parameters:
       - name: id
@@ -1083,6 +1387,10 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+        category:
+          type: string
+          enum: [Education, Environment, Transportation, Demographics, Business, Finance, Healthcare]
+          default: Education
         description:
           type: string
           maxLength: 5000
@@ -1101,6 +1409,9 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+        category:
+          type: string
+          enum: [Education, Environment, Transportation, Demographics, Business, Finance, Healthcare]
         description:
           type: string
           maxLength: 5000
@@ -1109,7 +1420,7 @@ components:
           enum: [PRIVATE, PUBLIC]
     Dataset:
       type: object
-      required: [id, ownerAdminId, name, originalFilename, fileType, detectedFields, visibility, status, createdAt, updatedAt]
+      required: [id, name, category, originalFilename, fileType, detectedFields, visibility, status, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -1117,6 +1428,7 @@ components:
         ownerAdminId:
           type: string
           format: uuid
+          nullable: true
         owner:
           nullable: true
           type: object
@@ -1131,7 +1443,17 @@ components:
               format: email
         name:
           type: string
+        category:
+          type: string
+          enum: [Education, Environment, Transportation, Demographics, Business, Finance, Healthcare]
         description:
+          type: string
+          nullable: true
+        databaseEngine:
+          type: string
+          nullable: true
+          enum: [MySQL, SQLServer, PostgreSQL, MongoDB, Neo4J, CouchBase]
+        targetDb:
           type: string
           nullable: true
         originalFilename:
@@ -1139,6 +1461,14 @@ components:
         fileType:
           type: string
           enum: [CSV, JSON, XLSX]
+        fileFormat:
+          type: string
+          enum: [CSV, JSON, XLSX]
+        format:
+          type: string
+          enum: [CSV, JSON, XLSX]
+        size:
+          type: string
         fileSizeBytes:
           oneOf:
             - type: integer
@@ -1159,6 +1489,31 @@ components:
         status:
           type: string
           enum: [UPLOADED, ANALYZING, ANALYZED, READY, IMPORTING, ACTIVE, FAILED, ARCHIVED]
+        uploadedBy:
+          type: string
+          nullable: true
+        contributorId:
+          type: string
+          nullable: true
+        contributorName:
+          type: string
+          nullable: true
+        contributorEmail:
+          type: string
+          nullable: true
+        contributor:
+          nullable: true
+          type: object
+          properties:
+            id:
+              type: string
+              nullable: true
+            name:
+              type: string
+              nullable: true
+            email:
+              type: string
+              nullable: true
         createdAt:
           type: string
           format: date-time

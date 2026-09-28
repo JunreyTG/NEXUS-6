@@ -1,6 +1,6 @@
 import type { ErrorRequestHandler } from "express";
 import { ZodError } from "zod";
-import { AppError, ConflictError, EmailProviderError, InvalidTokenError, NotFoundError, UploadValidationError } from "../errors/app-error.js";
+import { AppError, ConflictError, EmailProviderError, ExportValidationError, InvalidTokenError, NotFoundError, UploadValidationError } from "../errors/app-error.js";
 import { DatabaseError } from "../errors/database-error.js";
 import { AuthenticationError, AuthorizationError } from "../auth/errors.js";
 import { DatabaseNotConfiguredError, DatasetStorageUnavailableError } from "../database/errors.js";
@@ -39,6 +39,11 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
 
   if (error instanceof UploadValidationError) {
     res.status(400).json({ error: { code: error.code, message: "Uploaded file is invalid." } });
+    return;
+  }
+
+  if (error instanceof ExportValidationError) {
+    res.status(400).json({ error: { code: error.code, message: error.message || "Invalid export request." } });
     return;
   }
 

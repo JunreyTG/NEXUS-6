@@ -16,10 +16,15 @@ import { ReportService } from "../services/report.service.js";
 import { createReportRouter } from "./report.routes.js";
 import { createPublicRouter } from "./public.routes.js";
 import { PublicService } from "../services/public.service.js";
+import { DatasetExportService } from "../services/dataset-export.service.js";
 import { createAuthenticate } from "../auth/middleware.js";
 import type { AuthSessionRepository } from "../repositories/auth-session.repository.js";
 
-export function createApiRouter(authService?: AuthService, adminService?: AdminManagementService, logService?: LogService, datasetService?: DatasetService, databaseRouter?: DatabaseRouter, datasetStorageService?: DatasetStorageService, datasetRecordService?: DatasetRecordService, reportService?: ReportService, publicService?: PublicService, sessionRepository?: AuthSessionRepository): Router {
+import { createDashboardRouter } from "./dashboard.routes.js";
+import { createNotificationRouter } from "./notification.routes.js";
+import { createDataRequestRouter } from "./data-request.routes.js";
+
+export function createApiRouter(authService?: AuthService, adminService?: AdminManagementService, logService?: LogService, datasetService?: DatasetService, databaseRouter?: DatabaseRouter, datasetStorageService?: DatasetStorageService, datasetRecordService?: DatasetRecordService, reportService?: ReportService, publicService?: PublicService, sessionRepository?: AuthSessionRepository, datasetExportService?: DatasetExportService): Router {
   const router = Router();
   const resolvedLogService = logService ?? new LogService();
   const resolvedAuthService = authService ?? new AuthService({ logger: resolvedLogService });
@@ -30,16 +35,21 @@ export function createApiRouter(authService?: AuthService, adminService?: AdminM
   const resolvedDatasetRecordService = datasetRecordService ?? new DatasetRecordService({ logger: resolvedLogService });
   const resolvedReportService = reportService ?? new ReportService({ logger: resolvedLogService });
   const resolvedPublicService = publicService ?? new PublicService({ reportService: resolvedReportService });
+  const resolvedDatasetExportService = datasetExportService ?? new DatasetExportService({ logger: resolvedLogService, router: resolvedDatabaseRouter });
   const authenticateMiddleware = createAuthenticate(sessionRepository ?? resolvedAuthService.getSessionRepository());
-  router.use("/auth", createAuthRouter(resolvedAuthService, resolvedAdminService, authenticateMiddleware));
+  router.use("/auth", createAuthRouter(resolvedAuthService, resolvedAdminService, authenticateMiddleware, resolvedLogService));
   router.use("/admins", createAdminRouter(resolvedAdminService, authenticateMiddleware));
   router.use("/logs", createLogRouter(resolvedLogService, authenticateMiddleware));
-  router.use("/datasets", createDatasetRouter(resolvedDatasetService, undefined, resolvedDatasetStorageService, resolvedDatasetRecordService, authenticateMiddleware));
+  router.use("/datasets", createDatasetRouter(resolvedDatasetService, undefined, resolvedDatasetStorageService, resolvedDatasetRecordService, authenticateMiddleware, resolvedDatasetExportService));
   router.use("/reports", createReportRouter(resolvedReportService, authenticateMiddleware));
-  router.use("/public", createPublicRouter(resolvedPublicService));
-  router.use("/databases", createDatabaseRouter(resolvedDatabaseRouter, authenticateMiddleware));
+  router.use("/public", createPublicRouter(resolvedPublicService, resolvedLogService));
+  router.use("/databases", createDatabaseRouter(resolvedDatabaseRouter, authenticateMiddleware, resolvedLogService));
+  router.use("/dashboard", createDashboardRouter(resolvedDatasetService, authenticateMiddleware));
+  router.use("/notifications", createNotificationRouter(resolvedDatasetService, authenticateMiddleware));
+  router.use("/data-requests", createDataRequestRouter(authenticateMiddleware));
   router.use("/health", healthRouter);
   return router;
 }
+
 
 export const apiRouter = createApiRouter();

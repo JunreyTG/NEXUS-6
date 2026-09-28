@@ -16,9 +16,14 @@ describe("Phase 12 security hardening", () => {
     expect(sanitizeMetadata({ password: "secret", host: "db.internal", url: "mysql://user:pass@db/data", authorization: "Bearer token", safe: "visible" })).toEqual({ password: "[REDACTED]", host: "[REDACTED]", url: "[REDACTED]", authorization: "[REDACTED]", safe: "visible" });
   });
 
-  it("enforces bounded legacy upload configuration", () => {
-    expect(requireUploadConfig({ MAX_UPLOAD_SIZE_MB: "0" }).MAX_UPLOAD_SIZE_MB).toBe(100);
-    expect(() => requireUploadConfig({ MAX_UPLOAD_SIZE_MB: "101" })).toThrow();
+  it("supports unlimited GB upload and multi-gigabyte configurations", () => {
+    expect(requireUploadConfig({ MAX_UPLOAD_SIZE_MB: "0" }).MAX_UPLOAD_SIZE_MB).toBe(0);
+    expect(requireUploadConfig({ MAX_UPLOAD_SIZE_MB: "unlimited" }).MAX_UPLOAD_SIZE_MB).toBe(0);
+    expect(requireUploadConfig({ MAX_UPLOAD_SIZE_GB: "unlimited" }).MAX_UPLOAD_SIZE_MB).toBe(0);
+    expect(requireUploadConfig({ MAX_UPLOAD_SIZE_MB: "10240" }).MAX_UPLOAD_SIZE_MB).toBe(10240);
+    expect(requireUploadConfig({ MAX_UPLOAD_SIZE_GB: "10" }).MAX_UPLOAD_SIZE_MB).toBe(10240);
+    expect(requireUploadConfig({}).MAX_UPLOAD_SIZE_MB).toBe(0);
+    expect(() => requireUploadConfig({ MAX_UPLOAD_SIZE_MB: "-1" })).toThrow();
   });
 
   it("requires an explicit non-local CORS origin in production", () => {

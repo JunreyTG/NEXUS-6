@@ -56,13 +56,31 @@ export class DatasetRecordService {
 
   async list(datasetId: string, query: RecordQueryInput, actor: RecordActor) {
     const context = await this.context(datasetId, actor);
-    return this.router.getAdapter(context.dataset.selectedEngine!).listRecords({ ...context.storage, ...query });
+    const result = await this.router.getAdapter(context.dataset.selectedEngine!).listRecords({ ...context.storage, ...query });
+    await this.recordActivity(actor, "RECORD_QUERIED", datasetId, true, {
+      databaseEngine: context.dataset.selectedEngine,
+      page: query.page,
+      pageSize: query.pageSize,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
+      hasSearch: Boolean(query.search),
+      resultCount: result.items?.length ?? 0
+    });
+    return result;
   }
 
   async get(datasetId: string, recordId: string, actor: RecordActor) {
     const context = await this.context(datasetId, actor);
     const record = await this.router.getAdapter(context.dataset.selectedEngine!).getRecord({ ...context.storage, recordId });
-    if (!record) throw new NotFoundError("RECORD_NOT_FOUND");
+    if (!record) {
+      await this.recordActivity(actor, "RECORD_VIEWED", datasetId, false, { databaseEngine: context.dataset.selectedEngine, recordId }, "RECORD_NOT_FOUND");
+      throw new NotFoundError("RECORD_NOT_FOUND");
+    }
+    await this.recordActivity(actor, "RECORD_VIEWED", datasetId, true, {
+      databaseEngine: context.dataset.selectedEngine,
+      recordId,
+      fieldCount: Object.keys(record).length
+    });
     return record;
   }
 
@@ -71,10 +89,10 @@ export class DatasetRecordService {
     const record = parseRecord(input);
     try {
       const result = await this.router.getAdapter(context.dataset.selectedEngine!).insertRecord({ ...context.storage, record });
-      await this.recordActivity(actor, "RECORD_CREATE", datasetId, true, { fieldCount: Object.keys(record).length });
+      await this.recordActivity(actor, "RECORD_CREATE", datasetId, true, { databaseEngine: context.dataset.selectedEngine, fieldCount: Object.keys(record).length });
       return result;
     } catch (error) {
-      await this.recordActivity(actor, "RECORD_CREATE", datasetId, false, undefined, error instanceof Error ? error.name : "RECORD_CREATE_FAILED");
+      await this.recordActivity(actor, "RECORD_CREATE", datasetId, false, { databaseEngine: context.dataset.selectedEngine }, error instanceof Error ? error.name : "RECORD_CREATE_FAILED");
       throw error;
     }
   }
@@ -84,10 +102,10 @@ export class DatasetRecordService {
     const record = parseRecord(input);
     try {
       const result = await this.router.getAdapter(context.dataset.selectedEngine!).updateRecord({ ...context.storage, recordId, record });
-      await this.recordActivity(actor, "RECORD_UPDATE", datasetId, true, { fieldCount: Object.keys(record).length });
+      await this.recordActivity(actor, "RECORD_UPDATE", datasetId, true, { databaseEngine: context.dataset.selectedEngine, recordId, fieldCount: Object.keys(record).length });
       return result;
     } catch (error) {
-      await this.recordActivity(actor, "RECORD_UPDATE", datasetId, false, undefined, error instanceof Error ? error.name : "RECORD_UPDATE_FAILED");
+      await this.recordActivity(actor, "RECORD_UPDATE", datasetId, false, { databaseEngine: context.dataset.selectedEngine, recordId }, error instanceof Error ? error.name : "RECORD_UPDATE_FAILED");
       throw error;
     }
   }
@@ -96,9 +114,9 @@ export class DatasetRecordService {
     const context = await this.context(datasetId, actor);
     try {
       await this.router.getAdapter(context.dataset.selectedEngine!).deleteRecord({ ...context.storage, recordId });
-      await this.recordActivity(actor, "RECORD_DELETE", datasetId, true);
+      await this.recordActivity(actor, "RECORD_DELETE", datasetId, true, { databaseEngine: context.dataset.selectedEngine, recordId });
     } catch (error) {
-      await this.recordActivity(actor, "RECORD_DELETE", datasetId, false, undefined, error instanceof Error ? error.name : "RECORD_DELETE_FAILED");
+      await this.recordActivity(actor, "RECORD_DELETE", datasetId, false, { databaseEngine: context.dataset.selectedEngine, recordId }, error instanceof Error ? error.name : "RECORD_DELETE_FAILED");
       throw error;
     }
   }
@@ -111,7 +129,7 @@ export class DatasetRecordService {
     if (!dataset.selectedEngine || !location) throw new DatasetStorageUnavailableError();
     return {
       dataset,
-      storage: { ownerAdminId: dataset.ownerAdminId, datasetId: dataset.id, storageIdentifier: location.storageIdentifier }
+      storage: { ownerAdminId: dataset.ownerAdminId ?? "", datasetId: dataset.id, storageIdentifier: location.storageIdentifier }
     };
   }
 

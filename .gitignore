@@ -21,8 +21,9 @@ dist/
 build/
 coverage/
 
-# Temporary uploads and scratch
+# Temporary uploads, backups and scratch
 apps/api/var/uploads/
+backups/
 tmp/
 temp/
 *.tmp

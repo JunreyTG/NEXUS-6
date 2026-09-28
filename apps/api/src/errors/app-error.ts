@@ -58,3 +58,10 @@ export class ReportValidationError extends AppError {
     this.name = "ReportValidationError";
   }
 }
+
+export class ExportValidationError extends AppError {
+  public constructor(code = "INVALID_FORMAT", message = "Invalid export request.") {
+    super(message, 400, code);
+    this.name = "ExportValidationError";
+  }
+}

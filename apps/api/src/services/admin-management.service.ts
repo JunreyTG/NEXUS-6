@@ -74,13 +74,16 @@ export class AdminManagementService {
     return safeAdmin(admin as unknown as Record<string, unknown>);
   }
 
-  async listAdmins() {
-    return (await this.dependencies.admins.list()).map((admin) => safeAdmin(admin as unknown as Record<string, unknown>));
+  async listAdmins(actor: LogActor = { actorType: "SYSTEM" }) {
+    const list = (await this.dependencies.admins.list()).map((admin) => safeAdmin(admin as unknown as Record<string, unknown>));
+    await this.audit({ ...actor, action: "ADMIN_LIST_VIEWED", resourceType: "ADMIN", success: true, metadata: { count: list.length } });
+    return list;
   }
 
-  async getAdmin(id: string) {
+  async getAdmin(id: string, actor: LogActor = { actorType: "SYSTEM" }) {
     const admin = await this.dependencies.admins.findById(id);
     if (!admin) throw new NotFoundError("ADMIN_NOT_FOUND");
+    await this.audit({ ...actor, action: "ADMIN_VIEWED", resourceType: "ADMIN", resourceId: id, success: true });
     return safeAdmin(admin as unknown as Record<string, unknown>);
   }
 

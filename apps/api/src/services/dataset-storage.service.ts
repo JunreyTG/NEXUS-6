@@ -49,11 +49,12 @@ export class DatasetStorageService {
       throw new IncompatibleDatabaseEngineError();
     }
 
-    const storageIdentifier = generateStorageIdentifier(dataset.ownerAdminId, dataset.id);
+    const ownerId = dataset.ownerAdminId ?? actor?.actorId ?? "";
+    const storageIdentifier = generateStorageIdentifier(ownerId, dataset.id);
     await this.recordDatabaseActivity(actor, { action: "ENGINE_SELECTED", resourceType: "DATASET", resourceId: datasetId, success: true, metadata: { classification, engine } });
     await this.recordDatabaseActivity(actor, { action: "STORAGE_REQUESTED", resourceType: "DATASET", resourceId: datasetId, success: true, metadata: { engine } });
     try {
-      const descriptor = await this.router.getAdapter(engine).createStorage({ ownerAdminId: dataset.ownerAdminId, datasetId: dataset.id, storageIdentifier });
+      const descriptor = await this.router.getAdapter(engine).createStorage({ ownerAdminId: ownerId, datasetId: dataset.id, storageIdentifier });
       const location = await this.datasets.createLocation(dataset.id, descriptor);
       await this.datasets.markStorageReady(dataset.id, engine);
       await this.recordDatabaseActivity(actor, { action: "STORAGE_CREATE_SUCCESS", resourceType: "DATASET", resourceId: datasetId, success: true, metadata: { engine, storageIdentifier } });
@@ -68,6 +69,7 @@ export class DatasetStorageService {
     const dataset = await this.loadDataset(datasetId, actor);
     const location = await this.datasets.getLocation(datasetId);
     const engineStatus = dataset.selectedEngine ? this.router.getStatuses().find((status) => status.engine === dataset.selectedEngine)?.status : undefined;
+    await this.recordDatabaseActivity(actor, { action: "STORAGE_STATUS_VIEWED", resourceType: "DATASET", resourceId: datasetId, success: true, metadata: { configured: Boolean(location), selectedEngine: dataset.selectedEngine } });
     return {
       configured: Boolean(location),
       engineConfigured: engineStatus === "configured" || engineStatus === "healthy",

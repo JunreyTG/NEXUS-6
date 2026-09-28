@@ -40,7 +40,9 @@ function requestMetadata(request: Request): SessionRequestMetadata {
   };
 }
 
-export function createAuthRouter(authService = new AuthService(), adminService = new AdminManagementService(), authenticateMiddleware: RequestHandler = authenticate): Router {
+import type { ActivityLogger } from "../logging/types.js";
+
+export function createAuthRouter(authService = new AuthService(), adminService = new AdminManagementService(), authenticateMiddleware: RequestHandler = authenticate, logger?: ActivityLogger): Router {
   const router = Router();
 
   router.post("/login", loginRateLimit, async (request, response, next) => {
@@ -76,6 +78,19 @@ export function createAuthRouter(authService = new AuthService(), adminService =
   });
 
   router.get("/me", authenticateMiddleware, (request, response) => {
+    if (logger?.recordAudit) {
+      void logger.recordAudit({
+        actorType: request.principal!.role,
+        actorId: request.principal!.id ?? undefined,
+        actorEmail: request.principal!.email,
+        ipAddress: request.ip,
+        userAgent: request.get("user-agent"),
+        action: "USER_VIEWED",
+        resourceType: "USER",
+        success: true,
+        metadata: { category: "AUTHENTICATION" }
+      });
+    }
     response.status(200).json({ email: request.principal!.email, role: request.principal!.role });
   });
 

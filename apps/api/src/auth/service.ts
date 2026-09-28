@@ -155,11 +155,20 @@ export class AuthService {
         await safeLog(() => this.dependencies.logger.recordSecurity({ actorType: "ADMIN", actorId: adminSession.admin.id, actorEmail: adminSession.admin.email, ...metadata, action: "REFRESH_TOKEN_REUSE", success: false, errorCode: "REFRESH_TOKEN_REUSED" }));
         throw new AuthenticationError();
       }
-      return this.createSession(
+      const result = await this.createSession(
         { type: "ADMIN", id: adminSession.admin.id, email: adminSession.admin.email, role: "ADMIN" },
         config,
         metadata
       );
+      await safeLog(() => this.dependencies.logger.recordAudit({
+        actorType: "ADMIN",
+        actorId: adminSession.admin.id,
+        actorEmail: adminSession.admin.email,
+        ...metadata,
+        action: "TOKEN_REFRESH",
+        success: true
+      }));
+      return result;
     }
 
     const superAdminSession = await this.dependencies.sessions.findSuperAdminByRefreshTokenHash(tokenHash);
@@ -177,11 +186,19 @@ export class AuthService {
       await safeLog(() => this.dependencies.logger.recordSecurity({ actorType: "SUPER_ADMIN", actorEmail: config.SUPER_ADMIN_EMAIL, ...metadata, action: "REFRESH_TOKEN_REUSE", success: false, errorCode: "REFRESH_TOKEN_REUSED" }));
       throw new AuthenticationError();
     }
-    return this.createSession(
+    const result = await this.createSession(
       { type: "SUPER_ADMIN", id: null, email: config.SUPER_ADMIN_EMAIL, role: "SUPER_ADMIN" },
       config,
       metadata
     );
+    await safeLog(() => this.dependencies.logger.recordAudit({
+      actorType: "SUPER_ADMIN",
+      actorEmail: config.SUPER_ADMIN_EMAIL,
+      ...metadata,
+      action: "TOKEN_REFRESH",
+      success: true
+    }));
+    return result;
   }
 
   async logout(refreshToken: string | undefined, metadata: SessionRequestMetadata = {}): Promise<void> {

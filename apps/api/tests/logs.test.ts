@@ -129,4 +129,209 @@ describe("activity logging", () => {
       Object.assign(process.env, previous);
     }
   });
+
+  it("routes activity categories to correct log streams with enriched metadata", async () => {
+    const captured: Array<{ model: string; input: LogRecordInput }> = [];
+    const repository = {
+      append: async (model: string, input: LogRecordInput) => {
+        captured.push({ model, input });
+      },
+      list: async () => emptyPage()
+    } as unknown as LogRepository;
+
+    const service = new LogService(repository);
+
+    // Authentication -> LoginLog
+    await service.logActivity({
+      actorType: "ADMIN",
+      actorEmail: "admin@example.test",
+      category: "AUTHENTICATION",
+      action: "LOGIN",
+      success: true,
+      description: "Successful login"
+    });
+
+    // Administration -> AuditLog
+    await service.log({
+      actorType: "SUPER_ADMIN",
+      actorEmail: "super@example.test",
+      category: "ADMINISTRATION",
+      action: "ADMIN_CREATED",
+      resourceType: "ADMIN",
+      resourceId: "33333333-3333-4333-8333-333333333333",
+      status: "SUCCESS"
+    });
+
+    // Security -> SecurityEvent
+    await service.logActivity({
+      actorType: "ANONYMOUS",
+      category: "SECURITY",
+      action: "RATE_LIMIT_EXCEEDED",
+      success: false,
+      errorCode: "RATE_LIMIT_EXCEEDED"
+    });
+
+    // Dataset -> DatasetActivityLog
+    await service.logActivity({
+      actorType: "ADMIN",
+      category: "DATASET",
+      action: "DATASET_CREATED",
+      resourceType: "DATASET",
+      datasetId: "44444444-4444-4444-8444-444444444444",
+      success: true
+    });
+
+    // Database -> DatabaseActivityLog
+    await service.logActivity({
+      actorType: "ADMIN",
+      category: "DATABASE",
+      action: "STORAGE_REQUESTED",
+      databaseEngine: "PostgreSQL",
+      success: true
+    });
+
+    // Record -> DatasetActivityLog
+    await service.logActivity({
+      actorType: "ADMIN",
+      category: "RECORD",
+      action: "RECORD_CREATED",
+      resourceType: "DATASET",
+      datasetId: "44444444-4444-4444-8444-444444444444",
+      success: true
+    });
+
+    // Report -> DatasetActivityLog
+    await service.logActivity({
+      actorType: "ADMIN",
+      category: "REPORT",
+      action: "REPORT_CREATED",
+      resourceType: "REPORT",
+      resourceId: "55555555-5555-4555-8555-555555555555",
+      success: true
+    });
+
+    expect(captured).toHaveLength(7);
+    expect(captured[0]?.model).toBe("loginLog");
+    expect(captured[1]?.model).toBe("auditLog");
+    expect(captured[2]?.model).toBe("securityEvent");
+    expect(captured[3]?.model).toBe("datasetActivityLog");
+    expect(captured[4]?.model).toBe("databaseActivityLog");
+    expect(captured[5]?.model).toBe("datasetActivityLog");
+    expect(captured[6]?.model).toBe("datasetActivityLog");
+  });
+
+  it("redacts sensitive fields including passwords, tokens, connection strings, and hashes", async () => {
+    let captured: LogRecordInput | undefined;
+    const repository = {
+      append: async (_model: string, input: LogRecordInput) => { captured = input; },
+      list: async () => emptyPage()
+    } as unknown as LogRepository;
+
+    const service = new LogService(repository);
+
+    await service.logActivity({
+      actorType: "ADMIN",
+      category: "ADMINISTRATION",
+      action: "CONFIG_CHANGE",
+      success: true,
+      metadata: {
+        password: "secret-password",
+        confirmPassword: "secret-password",
+        refreshToken: "refresh-token-123",
+        accessToken: "access-token-456",
+        connectionString: "postgres://user:pass@localhost:5432/db",
+        apiKey: "api-secret-key",
+        databaseEngine: "PostgreSQL",
+        datasetId: "uuid-visible",
+        safeNote: "All operations normal"
+      }
+    });
+
+    const meta = captured?.metadata as Record<string, unknown>;
+    expect(meta.password).toBe("[REDACTED]");
+    expect(meta.confirmPassword).toBe("[REDACTED]");
+    expect(meta.refreshToken).toBe("[REDACTED]");
+    expect(meta.accessToken).toBe("[REDACTED]");
+    expect(meta.connectionString).toBe("[REDACTED]");
+    expect(meta.apiKey).toBe("[REDACTED]");
+    expect(meta.databaseEngine).toBe("PostgreSQL");
+    expect(meta.datasetId).toBe("uuid-visible");
+    expect(meta.safeNote).toBe("All operations normal");
+  });
+
+  it("serves unified activity logs, statistics, and stream aliases via API", async () => {
+    const page = { items: [{ id: "1", action: "TEST" }], page: 1, pageSize: 25, total: 1, pageCount: 1 };
+    const stats = {
+      total: 10,
+      success: 8,
+      failure: 2,
+      byCategory: { AUTHENTICATION: 5, DATASET: 5 },
+      byStream: { login: 5, audit: 0, security: 0, datasetActivity: 5, databaseActivity: 0 }
+    };
+    const logService = {
+      listAll: async () => page,
+      listLogin: async () => page,
+      listAudit: async () => page,
+      listSecurity: async () => page,
+      listDatasetActivity: async () => page,
+      listDatabaseActivity: async () => page,
+      getStatistics: async () => stats,
+      getById: async (id: string) => (id === "11111111-1111-4111-8111-111111111111" ? { id, action: "FOUND" } : null)
+    } as unknown as LogService;
+
+    const previous = { ...process.env };
+    Object.assign(process.env, {
+      NODE_ENV: config.NODE_ENV,
+      SUPER_ADMIN_EMAIL: config.SUPER_ADMIN_EMAIL,
+      SUPER_ADMIN_PASSWORD_HASH: config.SUPER_ADMIN_PASSWORD_HASH,
+      ACCESS_TOKEN_SECRET: config.ACCESS_TOKEN_SECRET,
+      ACCESS_TOKEN_EXPIRES_IN: config.ACCESS_TOKEN_EXPIRES_IN,
+      REFRESH_TOKEN_EXPIRES_DAYS: String(config.REFRESH_TOKEN_EXPIRES_DAYS)
+    });
+
+    try {
+      const app = createApp(undefined, undefined, logService);
+      const superToken = await issueAccessToken({ type: "SUPER_ADMIN", id: null, email: config.SUPER_ADMIN_EMAIL, role: "SUPER_ADMIN" }, "super-session", config);
+
+      // GET /api/logs
+      const rootRes = await request(app).get("/api/logs").set("Authorization", `Bearer ${superToken}`);
+      expect(rootRes.status).toBe(200);
+      expect(rootRes.body.total).toBe(1);
+
+      // GET /api/logs/statistics
+      const statsRes = await request(app).get("/api/logs/statistics").set("Authorization", `Bearer ${superToken}`);
+      expect(statsRes.status).toBe(200);
+      expect(statsRes.body.total).toBe(10);
+      expect(statsRes.body.byStream.login).toBe(5);
+
+      // GET /api/logs/activity
+      const activityRes = await request(app).get("/api/logs/activity").set("Authorization", `Bearer ${superToken}`);
+      expect(activityRes.status).toBe(200);
+
+      // GET /api/logs/authentication
+      const authRes = await request(app).get("/api/logs/authentication").set("Authorization", `Bearer ${superToken}`);
+      expect(authRes.status).toBe(200);
+
+      // GET /api/logs/datasets
+      const datasetRes = await request(app).get("/api/logs/datasets").set("Authorization", `Bearer ${superToken}`);
+      expect(datasetRes.status).toBe(200);
+
+      // GET /api/logs/database
+      const dbRes = await request(app).get("/api/logs/database").set("Authorization", `Bearer ${superToken}`);
+      expect(dbRes.status).toBe(200);
+
+      // GET /api/logs/:id found
+      const foundRes = await request(app).get("/api/logs/11111111-1111-4111-8111-111111111111").set("Authorization", `Bearer ${superToken}`);
+      expect(foundRes.status).toBe(200);
+      expect(foundRes.body.action).toBe("FOUND");
+
+      // GET /api/logs/:id not found
+      const notFoundRes = await request(app).get("/api/logs/22222222-2222-4222-8222-222222222222").set("Authorization", `Bearer ${superToken}`);
+      expect(notFoundRes.status).toBe(404);
+    } finally {
+      for (const key of Object.keys(process.env)) if (!(key in previous)) delete process.env[key];
+      Object.assign(process.env, previous);
+    }
+  });
 });
+

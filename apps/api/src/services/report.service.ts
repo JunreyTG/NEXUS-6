@@ -54,11 +54,14 @@ export class ReportService {
 
   async list(actor: ReportActor) {
     const reports = actor.role === "SUPER_ADMIN" ? await this.reports.listAll() : await this.reports.listByOwner(actor.actorId!);
-    return reports.map((report) => this.serialize(report as unknown as Record<string, unknown>));
+    const serialized = reports.map((report) => this.serialize(report as unknown as Record<string, unknown>));
+    await this.recordActivity(actor, "REPORT_LIST_VIEWED", "REPORT", true, { count: serialized.length });
+    return serialized;
   }
 
   async get(id: string, actor: ReportActor) {
     const report = await this.authorizeReport(id, actor);
+    await this.recordActivity(actor, "REPORT_VIEWED", id, true, { datasetId: report.datasetId });
     return this.serialize(report as unknown as Record<string, unknown>);
   }
 
@@ -73,7 +76,7 @@ export class ReportService {
   async create(input: ReportInput, actor: ReportActor) {
     const dataset = await this.authorizeDataset(input.datasetId, actor);
     const configuration = await this.normalizeConfiguration(input.configuration, dataset);
-    const ownerAdminId = actor.role === "ADMIN" ? actor.actorId! : dataset.ownerAdminId;
+    const ownerAdminId = actor.role === "ADMIN" ? actor.actorId! : (dataset.ownerAdminId ?? actor.actorId ?? "");
     const report = await this.reports.create({ ...input, configuration, ownerAdminId });
     await this.recordActivity(actor, "REPORT_CREATE", report.id, true, { datasetId: report.datasetId });
     return this.serialize(report as unknown as Record<string, unknown>);
@@ -102,7 +105,7 @@ export class ReportService {
     const configuration = this.persistedConfiguration(report.configuration);
     try {
       const result = await this.router.getAdapter(dataset.selectedEngine).queryForReport({
-        ownerAdminId: dataset.ownerAdminId,
+        ownerAdminId: dataset.ownerAdminId ?? "",
         datasetId: dataset.id,
         storageIdentifier: location.storageIdentifier,
         plan: configuration
@@ -123,7 +126,7 @@ export class ReportService {
     const location = await this.datasets.getLocation(dataset.id);
     if (!dataset.selectedEngine || !location) throw new DatasetStorageUnavailableError();
     const result = await this.router.getAdapter(dataset.selectedEngine).queryForReport({
-      ownerAdminId: dataset.ownerAdminId,
+      ownerAdminId: dataset.ownerAdminId ?? "",
       datasetId: dataset.id,
       storageIdentifier: location.storageIdentifier,
       plan: this.persistedConfiguration(report.configuration)

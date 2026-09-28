@@ -1,13 +1,1531 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#070b14" />
-    <title>NEXUS-6</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataVault6 - Centralized Dataset Collection System</title>
+  <meta name="description" content="DataVault6 - Centralized dataset collection, exploration, and activity monitoring system.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app-layout" id="appLayout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Brand Logo -->
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="36" height="36" rx="10" fill="url(#logo-gradient)"/>
+            <path d="M18 9C12.477 9 8 10.343 8 12C8 13.657 12.477 15 18 15C23.523 15 28 13.657 28 12C28 10.343 23.523 9 18 9Z" fill="#93C5FD"/>
+            <path d="M28 14.5C28 16.157 23.523 17.5 18 17.5C12.477 17.5 8 16.157 8 14.5V18.5C8 20.157 12.477 21.5 18 21.5C23.523 21.5 28 20.157 28 18.5V14.5Z" fill="#60A5FA"/>
+            <path d="M28 21C28 22.657 23.523 24 18 24C12.477 24 8 22.657 8 21V25C8 26.657 12.477 28 18 28C23.523 28 28 26.657 28 25V21Z" fill="#3B82F6"/>
+            <defs>
+              <linearGradient id="logo-gradient" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#1E3A8A"/>
+                <stop offset="1" stop-color="#2563EB"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">DataVault6</h1>
+          <p class="brand-subtitle">Centralized Dataset Collection System</p>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="sidebar-nav">
+        <!-- Main Dashboard -->
+        <a href="#dashboard" class="nav-item active" id="nav-dashboard">
+          <span class="nav-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+
+        <!-- DATASETS SECTION -->
+        <div class="nav-section-header">DATASETS</div>
+        <a href="#explore" class="nav-item" id="nav-explore">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <span class="nav-label">Explore Datasets</span>
+        </a>
+        <a href="#upload" class="nav-item" id="nav-upload">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </span>
+          <span class="nav-label">Upload Dataset</span>
+        </a>
+        <a href="#my-datasets" class="nav-item" id="nav-my-datasets">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+          </span>
+          <span class="nav-label">My Datasets</span>
+        </a>
+        <a href="#bookmarked" class="nav-item" id="nav-bookmarked">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Bookmarked</span>
+        </a>
+
+        <!-- DATABASES SECTION -->
+        <div class="nav-section-header">DATABASES</div>
+        <a href="#mysql" class="nav-item db-nav-item" data-db="MySQL">
+          <span class="nav-icon db-icon-circle db-01-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">MySQL</span>
+        </a>
+        <a href="#sqlserver" class="nav-item db-nav-item" data-db="SQLServer">
+          <span class="nav-icon db-icon-circle db-02-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">SQLServer</span>
+        </a>
+        <a href="#postgresql" class="nav-item db-nav-item" data-db="PostgreSQL">
+          <span class="nav-icon db-icon-circle db-03-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">PostgreSQL</span>
+        </a>
+        <a href="#mongodb" class="nav-item db-nav-item" data-db="MongoDB">
+          <span class="nav-icon db-icon-circle db-04-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">MongoDB</span>
+        </a>
+        <a href="#neo4j" class="nav-item db-nav-item" data-db="Neo4J">
+          <span class="nav-icon db-icon-circle db-05-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">Neo4J</span>
+        </a>
+        <a href="#couchbase" class="nav-item db-nav-item" data-db="CouchBase">
+          <span class="nav-icon db-icon-circle db-06-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </span>
+          <span class="nav-label">CouchBase</span>
+        </a>
+
+        <!-- TOOLS SECTION -->
+        <div class="nav-section-header">TOOLS</div>
+        <a href="#search-tool" class="nav-item" id="nav-search-tool">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <span class="nav-label">Search</span>
+        </a>
+        <a href="#analytics-tool" class="nav-item" id="nav-analytics-tool">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </span>
+          <span class="nav-label">Analytics</span>
+        </a>
+        <a href="#requests-tool" class="nav-item" id="nav-requests-tool">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </span>
+          <span class="nav-label">Data Requests</span>
+        </a>
+
+        <!-- ACCOUNT SECTION -->
+        <div class="nav-section-header">ACCOUNT</div>
+        <a href="#profile" class="nav-item" id="nav-profile">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </span>
+          <span class="nav-label">Profile</span>
+        </a>
+        <a href="#settings" class="nav-item" id="nav-settings">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Wave Graphic -->
+      <div class="sidebar-wave">
+        <svg viewBox="0 0 240 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 60C50 30 100 70 160 40C200 20 220 50 240 60V80H0V60Z" fill="url(#wave-gradient)" opacity="0.6"/>
+          <path d="M0 70C60 45 120 75 180 50C210 38 230 60 240 70V80H0V70Z" fill="url(#wave-gradient-2)" opacity="0.8"/>
+          <defs>
+            <linearGradient id="wave-gradient" x1="0" y1="20" x2="240" y2="80" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#3B82F6"/>
+              <stop offset="1" stop-color="#1D4ED8"/>
+            </linearGradient>
+            <linearGradient id="wave-gradient-2" x1="0" y1="40" x2="240" y2="80" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#60A5FA"/>
+              <stop offset="1" stop-color="#2563EB"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </aside>
+
+    <!-- MAIN BODY AREA (Header + Content + Right Panel) -->
+    <div class="main-wrapper">
+      <!-- TOP NAVIGATION BAR -->
+      <header class="top-header">
+        <!-- Global Search Bar -->
+        <div class="search-box">
+          <span class="search-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <input type="text" id="globalSearchInput" placeholder="Search datasets, keywords, contributors...." autocomplete="off">
+          <span class="search-shortcut">Ctrl + K</span>
+        </div>
+
+        <!-- Top Header Actions -->
+        <div class="header-actions">
+          <!-- Dark Mode Toggle -->
+          <button class="icon-btn" id="themeToggleBtn" title="Toggle Theme" aria-label="Toggle theme">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+
+          <!-- Notification Bell with Badge -->
+          <div class="notification-wrapper" style="position: relative;">
+            <button class="icon-btn" id="notificationBtn" title="Notifications" aria-label="Notifications">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
+            </button>
+            <div class="notification-panel" id="notificationPanel">
+              <div class="notification-panel-header">
+                <span class="notification-panel-title">Notifications</span>
+                <button class="btn-mark-all-read" id="btnMarkAllRead">Mark all read</button>
+              </div>
+              <div class="notification-panel-body" id="notificationList">
+                <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px;">Loading notifications...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Create Admin Button -->
+          <button class="btn-create-admin-header" id="btnCreateAdminTop" title="Create New Administrator" aria-label="Create Administrator">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+              <line x1="20" y1="8" x2="20" y2="14"/>
+              <line x1="23" y1="11" x2="17" y2="11"/>
+            </svg>
+            <span class="btn-create-admin-label">Create Admin</span>
+          </button>
+
+          <!-- User Profile Chip -->
+          <div class="user-chip" id="userProfileChip" style="position: relative; cursor: pointer;">
+            <div class="user-avatar" id="userAvatar" style="background-color: var(--primary-600); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+              <span id="userAvatarInitials" style="font-weight: 700; color: #FFFFFF; font-size: 12px;">SA</span>
+            </div>
+            <div class="user-details">
+              <span class="user-name" id="userDisplayName">Super Admin</span>
+              <span class="user-role" id="userDisplayRole">Super Administrator</span>
+            </div>
+            <svg class="chevron-down" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+            <div class="profile-dropdown-menu" id="profileDropdownMenu">
+              <div class="profile-dropdown-header">
+                <div class="profile-dropdown-name" id="menuUserName">Super Admin</div>
+                <div class="profile-dropdown-email" id="menuUserEmail">superadmin@nexus6.internal</div>
+              </div>
+              <button class="dropdown-item" id="btnOpenLoginModal">
+                <span>Switch / Sign In</span>
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="btnLogout" style="color: var(--rose-500);">
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+
+      <!-- TWO-COLUMN WORKSPACE: Center Content + Right Sidebar Panel -->
+      <div class="dashboard-grid">
+        <!-- CENTER MAIN CONTENT -->
+        <main class="center-content">
+          <!-- DASHBOARD OVERVIEW GROUP (Hero Banner, Metrics, Charts) -->
+          <div class="dashboard-overview-group" id="dashboardOverviewGroup">
+            <!-- HERO BANNER -->
+          <section class="hero-banner">
+            <div class="hero-text">
+              <h2 class="hero-greeting">Good morning, JLee!</h2>
+              <p class="hero-subtext">Discover, contribute, and manage datasets all in one place.</p>
+            </div>
+            <div class="hero-illustration">
+              <svg width="220" height="140" viewBox="0 0 220 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- 3D Database Cylinders & Floating Cards -->
+                <g filter="url(#glow)">
+                  <!-- Main Cylinder Back -->
+                  <ellipse cx="140" cy="40" rx="38" ry="16" fill="#60A5FA"/>
+                  <path d="M102 40v30c0 8.8 17 16 38 16s38-7.2 38-16V40z" fill="#3B82F6"/>
+                  <ellipse cx="140" cy="70" rx="38" ry="16" fill="#60A5FA"/>
+                  <path d="M102 70v30c0 8.8 17 16 38 16s38-7.2 38-16V70z" fill="#2563EB"/>
+                  <ellipse cx="140" cy="100" rx="38" ry="16" fill="#93C5FD"/>
+                  <!-- Floating holographic cards -->
+                  <rect x="25" y="45" width="65" height="45" rx="6" fill="#1E3A8A" fill-opacity="0.8" stroke="#93C5FD" stroke-width="1.5"/>
+                  <line x1="35" y1="58" x2="65" y2="58" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="35" y1="68" x2="75" y2="68" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="35" y1="76" x2="55" y2="76" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
+
+                  <rect x="155" y="20" width="55" height="40" rx="6" fill="#1E3A8A" fill-opacity="0.85" stroke="#BFDBFE" stroke-width="1.5"/>
+                  <line x1="165" y1="32" x2="195" y2="32" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="165" y1="40" x2="185" y2="40" stroke="#60A5FA" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="165" y1="48" x2="200" y2="48" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
+                </g>
+                <defs>
+                  <filter id="glow" x="0" y="0" width="220" height="140" filterUnits="userSpaceOnUse">
+                    <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#1D4ED8" flood-opacity="0.3"/>
+                  </filter>
+                </defs>
+              </svg>
+            </div>
+          </section>
+
+          <!-- 4 KPI SUMMARY METRICS -->
+          <section class="metrics-row">
+            <!-- Card 1: Total Datasets -->
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <div class="metric-value" id="kpiTotalDatasets">1,248</div>
+                <div class="metric-label">Total Datasets</div>
+                <div class="metric-trend trend-up">
+                  <span class="trend-arrow">&uarr;</span> 12% <span class="trend-sub">vs. last month</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Total Contributors -->
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-green">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <div class="metric-value" id="kpiTotalContributors">386</div>
+                <div class="metric-label">Total Contributors</div>
+                <div class="metric-trend trend-up">
+                  <span class="trend-arrow">&uarr;</span> 8% <span class="trend-sub">vs. last month</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Categories -->
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-purple">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <div class="metric-value" id="kpiCategories">52</div>
+                <div class="metric-label">Categories</div>
+                <div class="metric-trend trend-up">
+                  <span class="trend-arrow">&uarr;</span> 5% <span class="trend-sub">vs. last month</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Total Downloads -->
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-cyan">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <div class="metric-value" id="kpiTotalDownloads">18,492</div>
+                <div class="metric-label">Total Downloads</div>
+                <div class="metric-trend trend-up">
+                  <span class="trend-arrow">&uarr;</span> 20% <span class="trend-sub">vs. last month</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- MIDDLE ROW: TWO CHARTS -->
+          <section class="charts-row">
+            <!-- Chart 1: Dataset Activity Area Chart -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <h3 class="chart-title">Dataset Activity</h3>
+                <div class="dropdown-filter">
+                  <select id="activityPeriodSelect" aria-label="Dataset activity timeframe">
+                    <option value="7">Last 7 days</option>
+                    <option value="14">Last 14 days</option>
+                    <option value="30">Last 30 days</option>
+                  </select>
+                </div>
+              </div>
+              <div class="chart-canvas-container" id="activityChartContainer">
+                <!-- SVG Area/Line Chart -->
+                <svg class="activity-svg" viewBox="0 0 460 210" preserveAspectRatio="none">
+                  <!-- Grid Lines & Labels -->
+                  <g class="grid-lines">
+                    <line x1="35" y1="20" x2="445" y2="20" stroke="var(--grid-color)" stroke-dasharray="3 3"/>
+                    <text x="5" y="24" class="axis-label">400</text>
+
+                    <line x1="35" y1="60" x2="445" y2="60" stroke="var(--grid-color)" stroke-dasharray="3 3"/>
+                    <text x="5" y="64" class="axis-label">300</text>
+
+                    <line x1="35" y1="100" x2="445" y2="100" stroke="var(--grid-color)" stroke-dasharray="3 3"/>
+                    <text x="5" y="104" class="axis-label">200</text>
+
+                    <line x1="35" y1="140" x2="445" y2="140" stroke="var(--grid-color)" stroke-dasharray="3 3"/>
+                    <text x="5" y="144" class="axis-label">100</text>
+
+                    <line x1="35" y1="180" x2="445" y2="180" stroke="var(--grid-color)"/>
+                    <text x="15" y="184" class="axis-label">0</text>
+                  </g>
+
+                  <!-- Gradient Definition -->
+                  <defs>
+                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="180" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.35"/>
+                      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.0"/>
+                    </linearGradient>
+                  </defs>
+
+                  <!-- Filled Area -->
+                  <path d="M 45 158 Q 75 130, 110 135 T 175 105 T 240 128 T 305 65 T 370 102 T 435 55 L 435 180 L 45 180 Z" fill="url(#areaGradient)"/>
+
+                  <!-- Stroke Line -->
+                  <path class="chart-stroke" d="M 45 158 Q 75 130, 110 135 T 175 105 T 240 128 T 305 65 T 370 102 T 435 55" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+
+                  <!-- Data Points with Tooltip Triggers -->
+                  <g class="chart-points">
+                    <circle cx="45" cy="158" r="4.5" class="chart-dot" data-val="78" data-date="Sep 16"/>
+                    <circle cx="110" cy="135" r="4.5" class="chart-dot" data-val="145" data-date="Sep 17"/>
+                    <circle cx="175" cy="105" r="4.5" class="chart-dot" data-val="215" data-date="Sep 18"/>
+                    <circle cx="240" cy="128" r="4.5" class="chart-dot" data-val="160" data-date="Sep 19"/>
+                    <circle cx="305" cy="65" r="4.5" class="chart-dot" data-val="325" data-date="Sep 20"/>
+                    <circle cx="370" cy="102" r="4.5" class="chart-dot" data-val="220" data-date="Sep 21"/>
+                    <circle cx="435" cy="55" r="4.5" class="chart-dot" data-val="340" data-date="Sep 22"/>
+                  </g>
+
+                  <!-- X-Axis Labels -->
+                  <g class="x-axis-labels">
+                    <text x="32" y="202" class="axis-label">Sep 16</text>
+                    <text x="97" y="202" class="axis-label">Sep 17</text>
+                    <text x="162" y="202" class="axis-label">Sep 18</text>
+                    <text x="227" y="202" class="axis-label">Sep 19</text>
+                    <text x="292" y="202" class="axis-label">Sep 20</text>
+                    <text x="357" y="202" class="axis-label">Sep 21</text>
+                    <text x="420" y="202" class="axis-label">Sep 22</text>
+                  </g>
+                </svg>
+                <div class="chart-tooltip" id="chartTooltip"></div>
+              </div>
+            </div>
+
+            <!-- Chart 2: Datasets by Database Donut Chart -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <h3 class="chart-title">Datasets by Database</h3>
+              </div>
+              <div class="donut-chart-layout">
+                <!-- SVG Donut Chart with Center Label -->
+                <div class="donut-visual-wrap">
+                  <svg class="donut-svg" viewBox="0 0 160 160">
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#E2E8F0" stroke-width="24"/>
+                    <!-- MySQL (26%) #2563EB -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#2563EB" stroke-width="24" stroke-dasharray="88 251" stroke-dashoffset="0" class="donut-segment" data-db="MySQL" data-count="324 (26%)"/>
+                    <!-- SQLServer (15%) #10B981 -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#10B981" stroke-width="24" stroke-dasharray="51 288" stroke-dashoffset="-88" class="donut-segment" data-db="SQLServer" data-count="182 (15%)"/>
+                    <!-- PostgreSQL (17%) #06B6D4 -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#06B6D4" stroke-width="24" stroke-dasharray="58 281" stroke-dashoffset="-139" class="donut-segment" data-db="PostgreSQL" data-count="215 (17%)"/>
+                    <!-- MongoDB (13%) #F43F5E -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#F43F5E" stroke-width="24" stroke-dasharray="44 295" stroke-dashoffset="-197" class="donut-segment" data-db="MongoDB" data-count="156 (13%)"/>
+                    <!-- Neo4J (23%) #8B5CF6 -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#8B5CF6" stroke-width="24" stroke-dasharray="78 261" stroke-dashoffset="-241" class="donut-segment" data-db="Neo4J" data-count="291 (23%)"/>
+                    <!-- CouchBase (6%) #14B8A6 -->
+                    <circle cx="80" cy="80" r="54" fill="none" stroke="#14B8A6" stroke-width="24" stroke-dasharray="20 319" stroke-dashoffset="-319" class="donut-segment" data-db="CouchBase" data-count="80 (6%)"/>
+                  </svg>
+                  <div class="donut-center-info">
+                    <span class="donut-total" id="donutTotalDatasets">1,248</span>
+                    <span class="donut-sub">Total Datasets</span>
+                  </div>
+                </div>
+
+                <!-- Donut Legend List -->
+                <div class="donut-legend">
+                  <div class="legend-row" data-db="MySQL">
+                    <span class="legend-dot dot-db01"></span>
+                    <span class="legend-name">MySQL</span>
+                    <span class="legend-stat">324 (26%)</span>
+                  </div>
+                  <div class="legend-row" data-db="SQLServer">
+                    <span class="legend-dot dot-db02"></span>
+                    <span class="legend-name">SQLServer</span>
+                    <span class="legend-stat">182 (15%)</span>
+                  </div>
+                  <div class="legend-row" data-db="PostgreSQL">
+                    <span class="legend-dot dot-db03"></span>
+                    <span class="legend-name">PostgreSQL</span>
+                    <span class="legend-stat">215 (17%)</span>
+                  </div>
+                  <div class="legend-row" data-db="MongoDB">
+                    <span class="legend-dot dot-db04"></span>
+                    <span class="legend-name">MongoDB</span>
+                    <span class="legend-stat">156 (13%)</span>
+                  </div>
+                  <div class="legend-row" data-db="Neo4J">
+                    <span class="legend-dot dot-db05"></span>
+                    <span class="legend-name">Neo4J</span>
+                    <span class="legend-stat">291 (23%)</span>
+                  </div>
+                  <div class="legend-row" data-db="CouchBase">
+                    <span class="legend-dot dot-db06"></span>
+                    <span class="legend-name">CouchBase</span>
+                    <span class="legend-stat">80 (6%)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          </div><!-- End #dashboardOverviewGroup -->
+
+          <!-- DEDICATED DATABASE ENGINE SCREEN HEADER & SPECS (Activated when any database is clicked) -->
+          <div class="database-screen-header-wrap" id="databaseScreenHeaderWrap" style="display: none;">
+            <!-- Top Breadcrumb & Back Navigation -->
+            <div class="db-screen-top-bar">
+              <button class="btn-back-dashboard" id="btnBackToDashboard" title="Return to General Dashboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>&larr; Back to Dashboard</span>
+              </button>
+              <div class="db-breadcrumbs">
+                <a href="#dashboard" class="breadcrumb-link" id="breadcrumbDashboardLink">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-category" id="breadcrumbCategory">Databases</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current-name" id="breadcrumbDbName">MySQL</span>
+              </div>
+            </div>
+
+            <!-- Database Engine Hero Card -->
+            <div class="db-engine-hero" id="dbEngineHero">
+              <div class="db-engine-hero-main">
+                <div class="db-engine-icon-wrap" id="dbEngineHeroIcon">
+                  <!-- Dynamic engine icon -->
+                </div>
+                <div class="db-engine-details">
+                  <div class="db-engine-title-row">
+                    <h2 class="db-engine-name" id="dbEngineHeroName">MySQL Database</h2>
+                    <span class="db-engine-status-pill" id="dbEngineHeroStatus">
+                      <span class="status-pulse-dot"></span>
+                      <span id="dbEngineHeroStatusText">Connected (Port 3306)</span>
+                    </span>
+                  </div>
+                  <p class="db-engine-desc" id="dbEngineHeroDesc">
+                    ACID-compliant relational SQL storage designed for structured tables and relational data models.
+                  </p>
+                  <div class="db-engine-pills-row">
+                    <span class="db-meta-pill" id="dbHeroClassificationPill">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                      <span id="dbHeroClassificationText">Relational / SQL</span>
+                    </span>
+                    <span class="db-meta-pill" id="dbHeroDatasetsPill">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                      <span id="dbHeroDatasetCountText">0 Datasets Stored</span>
+                    </span>
+                    <span class="db-meta-pill" id="dbHeroPortPill">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <span id="dbHeroPortText">Port 3306</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="db-engine-hero-actions">
+                <button class="btn-primary btn-upload-target" id="btnUploadToThisDb">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span id="btnUploadToThisDbText">Upload Dataset to MySQL</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Database Screen Navigation Tabs -->
+            <div class="db-screen-tabs-bar">
+              <button class="db-tab-btn active" id="dbTabDatasets" data-dbtab="datasets">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span id="dbTabDatasetsLabel">Stored Datasets</span>
+                <span class="tab-count-badge" id="dbTabDatasetsCount">0</span>
+              </button>
+              <button class="db-tab-btn" id="dbTabSpecs" data-dbtab="specs">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span id="dbTabSpecsLabel">Engine Specs & Architecture</span>
+              </button>
+            </div>
+
+            <!-- Engine Specs Panel (Toggleable via Specs tab) -->
+            <div class="db-specs-panel" id="dbSpecsPanel" style="display: none;">
+              <div class="specs-grid">
+                <div class="spec-card">
+                  <div class="spec-label" id="specLabel1">Connection & Host</div>
+                  <div class="spec-val" id="specHostVal">localhost:3306</div>
+                  <div class="spec-sub" id="specSub1">Docker stack connected &bull; TCP Socket</div>
+                </div>
+                <div class="spec-card">
+                  <div class="spec-label" id="specLabel2">Engine Classification</div>
+                  <div class="spec-val" id="specClassVal">Relational / SQL</div>
+                  <div class="spec-sub" id="specSub2">Native SQL transaction handling</div>
+                </div>
+                <div class="spec-card">
+                  <div class="spec-label" id="specLabel3">Supported Formats</div>
+                  <div class="spec-val" id="specFormatsVal">CSV, TSV, XLSX</div>
+                  <div class="spec-sub" id="specSub3">Automated schema detection & normalization</div>
+                </div>
+                <div class="spec-card">
+                  <div class="spec-label" id="specLabel4">Driver & Connectivity</div>
+                  <div class="spec-val" id="specDriverVal">Prisma / mysql2 Client</div>
+                  <div class="spec-sub" id="specSub4">Type-safe queries with prepared statements</div>
+                </div>
+              </div>
+              <div class="spec-features-wrap">
+                <h4 class="spec-features-title" id="specFeaturesTitle">Engine Features & Storage Capabilities</h4>
+                <div class="spec-features-chips" id="specFeaturesChips">
+                  <!-- Injected dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DATASETS TABLE SECTION -->
+          <section class="table-card" id="datasetsTableSection">
+            <div class="table-card-header">
+              <div class="table-title-group">
+                <h3 class="table-title" id="tableSectionTitle">Recent Datasets</h3>
+                <span class="table-subtitle" id="tableSectionSubtitle">Explore, analyze, and manage multi-database datasets</span>
+              </div>
+              <a href="#view-all-datasets" class="view-all-link" id="viewAllDatasetsLink">View all &rarr;</a>
+            </div>
+
+            <div class="table-responsive">
+              <table class="datasets-table" id="recentDatasetsTable">
+                <thead>
+                  <tr>
+                    <th>Dataset Name</th>
+                    <th>Database</th>
+                    <th>Category</th>
+                    <th>Format</th>
+                    <th>Size</th>
+                    <th>Updated By</th>
+                    <th>Updated</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="datasetsTableBody">
+                  <tr id="datasetsLoadingRow">
+                    <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-muted);">
+                      <span class="spinner" style="border-color: rgba(37,99,235,0.2); border-top-color: var(--primary-600); margin-right: 8px; vertical-align: middle;"></span>
+                      Loading real datasets from DataVault6...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="pagination-wrapper" id="datasetPagination">
+                <span id="paginationInfo">Showing 0 datasets</span>
+                <div class="pagination-controls">
+                  <button class="btn-page" id="btnPrevPage" disabled>&larr; Previous</button>
+                  <span id="pageIndicator" style="font-weight: 600; font-size: 12px;">Page 1</span>
+                  <button class="btn-page" id="btnNextPage" disabled>Next &rarr;</button>
+                </div>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- DEDICATED ANALYTICS SCREEN -->
+          <div class="analytics-screen-wrap" id="analyticsScreenWrap" style="display: none;">
+            <!-- Top Bar & Breadcrumb -->
+            <div class="db-screen-top-bar">
+              <button class="btn-back-dashboard" id="btnBackFromAnalytics" title="Return to Dashboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>&larr; Back to Dashboard</span>
+              </button>
+              <div class="db-breadcrumbs">
+                <a href="#dashboard" class="breadcrumb-link" id="breadcrumbDashboardAnalytics">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-category">Tools</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current-name">Platform Analytics</span>
+              </div>
+            </div>
+
+            <!-- Analytics Hero Banner -->
+            <div class="analytics-hero" id="analyticsHero">
+              <div class="analytics-hero-main">
+                <div class="analytics-hero-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                  </svg>
+                </div>
+                <div class="analytics-hero-details">
+                  <div class="analytics-hero-title-row">
+                    <h2 class="analytics-hero-name">Platform Telemetry & Multi-Engine Analytics</h2>
+                    <span class="db-engine-status-pill" style="border-color: rgba(14,165,233,0.3); background: rgba(14,165,233,0.08); color: #0284C7;">
+                      <span class="status-pulse-dot" style="background: #0284C7;"></span>
+                      <span>Live Telemetry Engine</span>
+                    </span>
+                  </div>
+                  <p class="analytics-hero-desc">
+                    Real-time multi-database storage distribution, ingestion velocity, query execution telemetry, and platform contributor engagement metrics.
+                  </p>
+                  <div class="analytics-pills-row">
+                    <span class="db-meta-pill">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                      <span id="analyticsPillTimeframe">Timeframe: Last 30 Days</span>
+                    </span>
+                    <span class="db-meta-pill">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                      <span id="analyticsPillTotalDatasets">0 Datasets Indexed</span>
+                    </span>
+                    <span class="db-meta-pill">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                      <span id="analyticsPillStorageEngines">6/6 Engines Online</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="analytics-hero-actions">
+                <div class="timeframe-btn-group" id="analyticsTimeframeBtns">
+                  <button class="timeframe-btn" data-days="7">7D</button>
+                  <button class="timeframe-btn active" data-days="30">30D</button>
+                  <button class="timeframe-btn" data-days="90">90D</button>
+                  <button class="timeframe-btn" data-days="365">1Y</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4 KPI Telemetry Cards -->
+            <div class="metrics-row" style="margin-bottom: 24px;">
+              <div class="metric-card">
+                <div class="metric-icon-wrap icon-blue">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                </div>
+                <div class="metric-body">
+                  <div class="metric-value" id="telemetryTotalDatasets">0</div>
+                  <div class="metric-label">Managed Datasets</div>
+                  <div class="metric-trend trend-up"><span>&uarr;</span> Active across 6 engines</div>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon-wrap icon-green">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="metric-body">
+                  <div class="metric-value" id="telemetryContributors">0</div>
+                  <div class="metric-label">Active Contributors</div>
+                  <div class="metric-trend trend-up"><span>&uarr;</span> Verified Administrators</div>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon-wrap icon-purple">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                </div>
+                <div class="metric-body">
+                  <div class="metric-value" id="telemetryCategories">0</div>
+                  <div class="metric-label">Active Domains</div>
+                  <div class="metric-trend trend-up"><span>&uarr;</span> Classification taxonomies</div>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon-wrap icon-cyan">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </div>
+                <div class="metric-body">
+                  <div class="metric-value" id="telemetryDownloads">0</div>
+                  <div class="metric-label">Total Exports & Queries</div>
+                  <div class="metric-trend trend-up"><span>&uarr;</span> CSV, JSON, XLSX Streams</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Analytics Detailed Sections -->
+            <div class="analytics-grid-two">
+              <!-- Multi-Engine Storage Balance Card -->
+              <div class="analytics-card">
+                <div class="analytics-card-header">
+                  <h3 class="analytics-card-title">Database Storage Load Distribution</h3>
+                  <span class="analytics-card-badge">6 Engines Connected</span>
+                </div>
+                <p class="analytics-card-sub">Real-time partitioning of datasets across multi-model storage layers</p>
+                <div class="engine-analytics-list" id="engineAnalyticsList">
+                  <!-- Dynamic Engine Bars -->
+                </div>
+              </div>
+
+              <!-- Category Breakdown Card -->
+              <div class="analytics-card">
+                <div class="analytics-card-header">
+                  <h3 class="analytics-card-title">Dataset Category Composition</h3>
+                  <span class="analytics-card-badge">Domain Breakdown</span>
+                </div>
+                <p class="analytics-card-sub">Distribution of uploaded and analyzed data sets by domain taxonomy</p>
+                <div class="category-analytics-list" id="categoryAnalyticsList">
+                  <!-- Dynamic Category Bars -->
+                </div>
+              </div>
+            </div>
+
+            <div class="analytics-grid-two" style="margin-top: 20px;">
+              <!-- Ingestion Timeline Card -->
+              <div class="analytics-card">
+                <div class="analytics-card-header">
+                  <h3 class="analytics-card-title">Activity & Ingestion Velocity</h3>
+                  <span class="analytics-card-badge" id="activityVelocityBadge">Last 30 Days</span>
+                </div>
+                <p class="analytics-card-sub">Daily telemetry of dataset uploads, automated schema analyses, and downloads</p>
+                <div class="timeline-visual-wrap" id="analyticsTimelineChart">
+                  <!-- Dynamic visualization -->
+                </div>
+              </div>
+
+              <!-- Multi-Database Health & Port Matrix -->
+              <div class="analytics-card">
+                <div class="analytics-card-header">
+                  <h3 class="analytics-card-title">Database Ports & Health Matrix</h3>
+                  <span class="analytics-card-badge" style="color: #10B981; background: rgba(16,185,129,0.1);">All Systems Nominal</span>
+                </div>
+                <p class="analytics-card-sub">Physical connection telemetry and multi-engine routing ports</p>
+                <div class="db-health-matrix" id="dbHealthMatrix">
+                  <!-- 6 DB health rows -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DEDICATED DATA REQUESTS SCREEN -->
+          <div class="requests-screen-wrap" id="dataRequestsScreenWrap" style="display: none;">
+            <!-- Top Bar & Breadcrumb -->
+            <div class="db-screen-top-bar">
+              <button class="btn-back-dashboard" id="btnBackFromRequests" title="Return to Dashboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>&larr; Back to Dashboard</span>
+              </button>
+              <div class="db-breadcrumbs">
+                <a href="#dashboard" class="breadcrumb-link" id="breadcrumbDashboardRequests">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-category">Tools</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current-name">Data Requests</span>
+              </div>
+            </div>
+
+            <!-- Requests Hero Banner -->
+            <div class="requests-hero" id="requestsHero">
+              <div class="requests-hero-main">
+                <div class="requests-hero-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                </div>
+                <div class="requests-hero-details">
+                  <div class="requests-hero-title-row">
+                    <h2 class="requests-hero-name">Community Data Ingestion Requests</h2>
+                    <span class="db-engine-status-pill" style="border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); color: #D97706;">
+                      <span class="status-pulse-dot" style="background: #F59E0B;"></span>
+                      <span>Collaboration Board</span>
+                    </span>
+                  </div>
+                  <p class="requests-hero-desc">
+                    Request datasets you need for research or analytics. Upvote community proposals and collaborate with administrators to ingest and partition new data.
+                  </p>
+                  <div class="requests-pills-row">
+                    <span class="db-meta-pill">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      <span id="requestsPillCount">5 Open Requests</span>
+                    </span>
+                    <span class="db-meta-pill">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span id="requestsPillFulfilled">1 Fulfilled</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="requests-hero-actions">
+                <button class="btn-primary" id="btnOpenNewRequestModal" style="padding: 10px 20px; font-weight: 700; font-size: 13px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>+ Submit Data Request</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Requests Filter Controls -->
+            <div class="requests-toolbar">
+              <div class="requests-status-tabs" id="requestsStatusTabs">
+                <button class="req-tab-btn active" data-status="ALL">All Requests <span class="req-badge" id="reqBadgeAll">0</span></button>
+                <button class="req-tab-btn" data-status="PENDING">Pending <span class="req-badge" id="reqBadgePending">0</span></button>
+                <button class="req-tab-btn" data-status="APPROVED">Approved <span class="req-badge" id="reqBadgeApproved">0</span></button>
+                <button class="req-tab-btn" data-status="IN_PROGRESS">In Progress <span class="req-badge" id="reqBadgeProgress">0</span></button>
+                <button class="req-tab-btn" data-status="FULFILLED">Fulfilled <span class="req-badge" id="reqBadgeFulfilled">0</span></button>
+              </div>
+              <div class="requests-search-wrap">
+                <input type="text" id="requestsSearchInput" placeholder="Filter requests by keyword, engine, or requester..." class="requests-search-box">
+              </div>
+            </div>
+
+            <!-- Requests Cards / Table List -->
+            <div class="requests-list-container" id="requestsListContainer">
+              <!-- Dynamically rendered by DataRequestsManager -->
+            </div>
+          </div>
+        </main>
+
+        <!-- RIGHT SIDEBAR PANEL -->
+        <aside class="right-panel">
+          <!-- DATABASE CENTER -->
+          <section class="panel-section">
+            <div class="panel-header">
+              <h3 class="panel-title">Database Center</h3>
+              <a href="#database-center" class="view-all-link" id="viewAllDatabasesLink">View all &rarr;</a>
+            </div>
+
+            <!-- 6 Database Cards Grid (2 columns) -->
+            <div class="db-cards-grid">
+              <!-- DB 01 -->
+              <div class="db-card card-db01" data-db-name="MySQL">
+                <div class="db-card-icon icon-db01">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">MySQL</div>
+                <div class="db-card-count">324 datasets</div>
+                <div class="db-card-size">4.2 GB</div>
+                <button class="btn-db-explore explore-db01" data-explore-db="MySQL">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 02 -->
+              <div class="db-card card-db02" data-db-name="SQLServer">
+                <div class="db-card-icon icon-db02">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">SQLServer</div>
+                <div class="db-card-count">182 datasets</div>
+                <div class="db-card-size">2.8 GB</div>
+                <button class="btn-db-explore explore-db02" data-explore-db="SQLServer">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 03 -->
+              <div class="db-card card-db03" data-db-name="PostgreSQL">
+                <div class="db-card-icon icon-db03">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">PostgreSQL</div>
+                <div class="db-card-count">215 datasets</div>
+                <div class="db-card-size">3.1 GB</div>
+                <button class="btn-db-explore explore-db03" data-explore-db="PostgreSQL">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 04 -->
+              <div class="db-card card-db04" data-db-name="MongoDB">
+                <div class="db-card-icon icon-db04">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">MongoDB</div>
+                <div class="db-card-count">156 datasets</div>
+                <div class="db-card-size">1.9 GB</div>
+                <button class="btn-db-explore explore-db04" data-explore-db="MongoDB">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 05 -->
+              <div class="db-card card-db05" data-db-name="Neo4J">
+                <div class="db-card-icon icon-db05">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">Neo4J</div>
+                <div class="db-card-count">291 datasets</div>
+                <div class="db-card-size">5.7 GB</div>
+                <button class="btn-db-explore explore-db05" data-explore-db="Neo4J">Explore &rarr;</button>
+              </div>
+
+              <!-- DB 06 -->
+              <div class="db-card card-db06" data-db-name="CouchBase">
+                <div class="db-card-icon icon-db06">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <div class="db-card-title">CouchBase</div>
+                <div class="db-card-count">80 datasets</div>
+                <div class="db-card-size">1.2 GB</div>
+                <button class="btn-db-explore explore-db06" data-explore-db="CouchBase">Explore &rarr;</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- QUICK ACTIONS -->
+          <section class="panel-section">
+            <h3 class="panel-title" style="margin-bottom: 12px;">Quick Actions</h3>
+            <div class="quick-actions-grid">
+              <!-- Upload Dataset (Primary Blue) -->
+              <button class="btn-quick quick-upload" id="btnQuickUpload">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>Upload Dataset</span>
+              </button>
+
+              <!-- Explore Datasets (Soft Blue) -->
+              <button class="btn-quick quick-explore" id="btnQuickExplore">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <span>Explore Datasets</span>
+              </button>
+
+              <!-- My Datasets (Soft Green) -->
+              <button class="btn-quick quick-my-datasets" id="btnQuickMyDatasets">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <span>My Datasets</span>
+              </button>
+
+              <!-- View Analytics (Soft Pink) -->
+              <button class="btn-quick quick-analytics" id="btnQuickAnalytics">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                <span>View Analytics</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- ACTIVITY FEED (Activity Logs: Specifically System Operations, NOT Login/Logout) -->
+          <section class="panel-section">
+            <div class="panel-header">
+              <div class="feed-header-wrap">
+                <h3 class="panel-title">Activity Feed</h3>
+                <span class="system-logs-tag" title="Only internal system activity is recorded (Authentication/Login records are excluded)">System Logs</span>
+              </div>
+              <a href="#activity-logs" class="view-all-link" id="viewAllActivityLink">View all &rarr;</a>
+            </div>
+
+            <!-- Activity Items List (Populated dynamically from real operational logs) -->
+            <div class="activity-feed-list" id="activityFeedList">
+              <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12px;">
+                <span class="spinner" style="border-color: rgba(37,99,235,0.2); border-top-color: var(--primary-600); margin-right: 6px; vertical-align: middle;"></span>
+                Loading recent system activity...
+              </div>
+            </div>
+
+          </section>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: UPLOAD DATASET -->
+  <div class="modal-overlay" id="uploadModal" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Upload Dataset to DataVault6</h3>
+        <button class="modal-close-btn" id="closeUploadModal">&times;</button>
+      </div>
+      <form id="uploadDatasetForm">
+        <div class="form-group">
+          <label for="datasetFileInput">Select Dataset File *</label>
+          <input type="file" id="datasetFileInput" accept=".csv,.tsv,.json,.ndjson,.jsonl,.xml,.xlsx" required style="padding: 10px; border: 1px dashed var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface-alt); width: 100%; cursor: pointer;">
+          <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">Supported formats: CSV, TSV, JSON, NDJSON, XML, XLSX</small>
+        </div>
+        <div class="form-group">
+          <label for="datasetNameInput">Dataset Name *</label>
+          <input type="text" id="datasetNameInput" required placeholder="e.g., Global Economic Index 2026">
+        </div>
+        <div class="form-group">
+          <label for="datasetDescInput">Description</label>
+          <textarea id="datasetDescInput" rows="2" placeholder="Brief description of the dataset contents and context"></textarea>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="datasetVisibilityInput">Visibility</label>
+            <select id="datasetVisibilityInput">
+              <option value="PRIVATE">Private (Owner Only)</option>
+              <option value="PUBLIC">Public (Shared with All)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="datasetSizeInput">File Size</label>
+            <input type="text" id="datasetSizeInput" placeholder="Auto-detected upon file selection" readonly style="background: var(--bg-surface-alt);">
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md); font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+          <div>
+            <strong style="color: var(--primary-700); display: block; margin-bottom: 2px;">Automated Schema Analysis & Database Recommendation</strong>
+            Upon upload, DataVault6 analyzes your data structure, recommends the optimal database engine, and evaluates compatibility across relational, document, key-value, and graph engines.
+          </div>
+        </div>
+        <div id="uploadErrorMsg" style="color: var(--rose-500); font-size: 12px; margin-bottom: 12px; display: none;"></div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="cancelUploadBtn">Cancel</button>
+          <button type="submit" class="btn-primary" id="submitUploadBtn">
+            <span id="submitUploadText">Upload & Analyze Dataset</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SYSTEM ACTIVITY LOGS VIEWER (Explicitly tracks internal activities, NOT logins/logouts) -->
+  <div class="modal-overlay" id="activityLogsModal" style="display: none;">
+    <div class="modal-box modal-wide">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">System Activity Logs</h3>
+          <p class="modal-subtitle">Tracking all operational events, dataset uploads, queries, and system modifications inside DataVault6</p>
+        </div>
+        <button class="modal-close-btn" id="closeActivityLogsModal">&times;</button>
+      </div>
+
+      <!-- System Activity Logs Policy Banner -->
+      <div class="logs-banner">
+        <div class="banner-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </div>
+        <div class="banner-text">
+          <strong>Internal Activity Logs Policy:</strong> This stream records exclusively operational and data management events (Dataset Ingestion, Storage Mounting, Schema Sync, Record Operations, and Analytics Queries). <em>User authentication, login, and logout events are completely isolated in separate security logs and excluded from this view.</em>
+        </div>
+      </div>
+
+      <!-- Filters Toolbar -->
+      <div class="logs-toolbar">
+        <div class="logs-filter-group">
+          <button class="filter-chip active" data-filter="ALL">All System Activities</button>
+          <button class="filter-chip" data-filter="UPLOAD">Dataset Uploads</button>
+          <button class="filter-chip" data-filter="STORAGE">Storage & DB Ops</button>
+          <button class="filter-chip" data-filter="QUERY">Queries & Exports</button>
+          <button class="filter-chip" data-filter="AUDIT">Audit & Admin</button>
+        </div>
+        <div class="logs-search">
+          <input type="text" id="logsSearchInput" placeholder="Filter activity records...">
+        </div>
+      </div>
+
+      <!-- Activity Logs Table -->
+      <div class="logs-table-wrapper">
+        <table class="logs-table" id="fullLogsTable">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Actor</th>
+              <th>Action Type</th>
+              <th>Target Resource</th>
+              <th>Details</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="fullLogsTableBody">
+            <!-- Populated dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="logs-modal-footer">
+        <span class="logs-count-info" id="logsCountInfo">Showing 0 recorded system activities</span>
+        <div class="logs-footer-actions">
+          <button class="btn-primary" id="btnExportLogs">Export Logs (JSON)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DATASET DETAILS & ANALYSIS -->
+  <div class="modal-overlay" id="datasetDetailsModal" style="display: none;">
+    <div class="modal-box modal-wide" style="max-height: 85vh; overflow-y: auto;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="analysisModalTitle">Dataset Analysis & Profiling</h3>
+          <p class="modal-subtitle" id="analysisModalSubtitle">Intelligent classification and schema detection</p>
+        </div>
+        <button class="modal-close-btn" id="closeDetailsModal">&times;</button>
+      </div>
+      <div id="analysisModalBody" style="padding: 12px 0;">
+        <!-- Dynamically rendered -->
+      </div>
+      <div class="form-actions" style="margin-top: 16px;">
+        <button type="button" class="btn-secondary" id="closeDetailsBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AUTHENTICATION / LOGIN -->
+  <div class="modal-overlay" id="loginModal" style="display: none;">
+    <div class="modal-box" style="max-width: 420px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Sign In to DataVault6</h3>
+          <p class="modal-subtitle">Authenticate to access datasets and operational logs</p>
+        </div>
+        <button class="modal-close-btn" id="closeLoginModal">&times;</button>
+      </div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmailInput">Email Address *</label>
+          <input type="email" id="loginEmailInput" required placeholder="superadmin@nexus6.internal" value="superadmin@nexus6.internal">
+        </div>
+        <div class="form-group">
+          <label for="loginPasswordInput">Password *</label>
+          <input type="password" id="loginPasswordInput" required placeholder="••••••••••••" value="SuperAdmin@123456">
+        </div>
+        <div id="loginErrorMsg" style="color: var(--rose-500); font-size: 12px; margin-bottom: 12px; display: none;"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="btnSubmitLogin" style="width: 100%;">
+            <span id="loginBtnText">Sign In</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SUBMIT DATA REQUEST -->
+  <div class="modal-overlay" id="submitRequestModal" style="display: none;">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Submit Community Data Request</h3>
+          <p class="modal-subtitle">Propose a new dataset for ingestion and database partitioning</p>
+        </div>
+        <button class="modal-close-btn" id="closeRequestModal">&times;</button>
+      </div>
+      <form id="newRequestForm">
+        <div class="form-group">
+          <label for="reqTitleInput">Dataset Title *</label>
+          <input type="text" id="reqTitleInput" required placeholder="e.g. Global Renewable Energy Yields 2026">
+        </div>
+        <div class="form-group">
+          <label for="reqDescInput">Description & Intended Analysis *</label>
+          <textarea id="reqDescInput" required rows="3" placeholder="Describe the records, intended analysis, key fields, and schema expectations..."></textarea>
+        </div>
+        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label for="reqCategorySelect">Category Domain</label>
+            <select id="reqCategorySelect">
+              <option value="Education">Education</option>
+              <option value="Finance">Finance</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Transportation">Transportation</option>
+              <option value="Business">Business</option>
+              <option value="Demographics">Demographics</option>
+              <option value="Environment">Environment</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reqEngineSelect">Preferred Storage Engine</label>
+            <select id="reqEngineSelect">
+              <option value="PostgreSQL">PostgreSQL (Relational)</option>
+              <option value="MySQL">MySQL (Relational)</option>
+              <option value="MongoDB">MongoDB (Document)</option>
+              <option value="SQLServer">SQLServer (Enterprise)</option>
+              <option value="Neo4J">Neo4J (Graph)</option>
+              <option value="CouchBase">CouchBase (Key-Value)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label for="reqFormatSelect">Desired Format</label>
+            <select id="reqFormatSelect">
+              <option value="CSV">CSV</option>
+              <option value="JSON">JSON</option>
+              <option value="XLSX">XLSX</option>
+              <option value="NDJSON">NDJSON</option>
+              <option value="TSV">TSV</option>
+              <option value="XML">XML</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reqPrioritySelect">Urgency Priority</label>
+            <select id="reqPrioritySelect">
+              <option value="MEDIUM">Medium Priority</option>
+              <option value="LOW">Low Priority</option>
+              <option value="HIGH">High Priority</option>
+              <option value="URGENT">Urgent (Immediate Ingestion)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top: 18px;">
+          <button type="button" class="btn-secondary" id="cancelRequestModalBtn">Cancel</button>
+          <button type="submit" class="btn-primary" id="btnSubmitNewRequest">
+            <span>Submit Request</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE / MANAGE ADMINISTRATORS -->
+  <div class="modal-overlay" id="createAdminModal" style="display: none;">
+    <div class="modal-box modal-admin-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="admin-modal-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <line x1="20" y1="8" x2="20" y2="14"/>
+                <line x1="23" y1="11" x2="17" y2="11"/>
+              </svg>
+            </div>
+            <h3 class="modal-title">Administrator Management</h3>
+          </div>
+          <p class="modal-subtitle">Provision new data administrators and manage platform role permissions</p>
+        </div>
+        <button class="modal-close-btn" id="closeCreateAdminModal">&times;</button>
+      </div>
+
+      <!-- Admin Modal Navigation Tabs -->
+      <div class="admin-modal-tabs" id="adminModalTabs">
+        <button class="admin-tab-btn active" data-admin-tab="create">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Create Admin</span>
+        </button>
+        <button class="admin-tab-btn" data-admin-tab="directory">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Admin Directory</span>
+          <span class="admin-count-badge" id="adminDirectoryCount">0</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Create Admin Form -->
+      <div class="admin-tab-content" id="adminTabCreate">
+        <form id="createAdminForm">
+          <div class="form-group">
+            <label for="adminNameInput">Full Name *</label>
+            <input type="text" id="adminNameInput" required placeholder="e.g. Dr. Sarah Jenkins" autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label for="adminEmailInput">Official Email Address *</label>
+            <input type="email" id="adminEmailInput" required placeholder="e.g. sarah.jenkins@company.org" autocomplete="email">
+            <small style="color: var(--text-muted); font-size: 11.5px; margin-top: 4px; display: block;">
+              An email verification link and password setup token will be generated and dispatched.
+            </small>
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="adminRoleSelect">Administrative Role</label>
+              <select id="adminRoleSelect">
+                <option value="ADMIN">Data Administrator (Standard)</option>
+                <option value="SUPER_ADMIN">Super Administrator (Full Privileges)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="adminDepartmentInput">Department / Unit</label>
+              <input type="text" id="adminDepartmentInput" placeholder="e.g. Analytics & BI Team" value="Data Operations">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="margin-bottom: 6px; display: block;">Engine Access & Permissions</label>
+            <div class="engine-checkboxes-grid">
+              <label class="engine-check-label"><input type="checkbox" checked value="MySQL"> <span>MySQL</span></label>
+              <label class="engine-check-label"><input type="checkbox" checked value="PostgreSQL"> <span>PostgreSQL</span></label>
+              <label class="engine-check-label"><input type="checkbox" checked value="MongoDB"> <span>MongoDB</span></label>
+              <label class="engine-check-label"><input type="checkbox" checked value="SQLServer"> <span>SQLServer</span></label>
+              <label class="engine-check-label"><input type="checkbox" checked value="Neo4J"> <span>Neo4J</span></label>
+              <label class="engine-check-label"><input type="checkbox" checked value="CouchBase"> <span>CouchBase</span></label>
+            </div>
+          </div>
+
+          <!-- Alert Containers -->
+          <div id="createAdminErrorMsg" class="admin-alert admin-alert-error" style="display: none;"></div>
+          <div id="createAdminSuccessMsg" class="admin-alert admin-alert-success" style="display: none;"></div>
+
+          <div class="form-actions" style="margin-top: 20px;">
+            <button type="button" class="btn-secondary" id="cancelCreateAdminBtn">Cancel</button>
+            <button type="submit" class="btn-primary" id="btnSubmitCreateAdmin">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Create Administrator</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tab 2: Directory List -->
+      <div class="admin-tab-content" id="adminTabDirectory" style="display: none;">
+        <div class="admin-directory-toolbar">
+          <input type="text" id="adminSearchInput" placeholder="Filter administrators by name or email..." class="admin-search-input">
+          <button class="btn-secondary" id="btnRefreshAdmins" style="padding: 6px 12px; font-size: 12px;">Refresh</button>
+        </div>
+        <div class="admin-list-container" id="adminListContainer">
+          <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+            <span class="spinner" style="margin-right: 6px;"></span> Loading administrators...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING DATASET ACTION MENU -->
+  <div class="dropdown-menu" id="datasetActionMenu">
+    <button class="dropdown-item" data-action="download-csv">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Download CSV</span>
+    </button>
+    <button class="dropdown-item" data-action="download-json">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Download JSON</span>
+    </button>
+    <button class="dropdown-item" data-action="download-xlsx">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Download XLSX</span>
+    </button>
+    <div class="dropdown-divider"></div>
+    <button class="dropdown-item" data-action="toggle-bookmark">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <span id="menuBookmarkText">Bookmark</span>
+    </button>
+    <button class="dropdown-item" data-action="view-analysis">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span>View Analysis & Profiling</span>
+    </button>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
 </html>
+
