@@ -4,6 +4,7 @@ export default defineConfig({
   server: {
     port: 8080,
     strictPort: false,
+    allowedHosts: true,
     proxy: {
       "/api": {
         target: "http://localhost:4000",
@@ -13,6 +14,7 @@ export default defineConfig({
   },
   preview: {
     port: 8080,
-    strictPort: false
+    strictPort: false,
+    allowedHosts: true
   }
 });

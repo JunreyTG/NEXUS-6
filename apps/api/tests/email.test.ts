@@ -113,7 +113,13 @@ describe("Brevo Email Provider & Configuration", () => {
         }
       ],
       subject: "Verify your DataVault6 administrator email",
-      htmlContent: expect.stringContaining("https://localhost:4000/verify?token=abc")
+      htmlContent: expect.stringContaining("https://localhost:4000/verify?token=abc"),
+      textContent: expect.stringContaining("https://localhost:4000/verify?token=abc"),
+      headers: {
+        "X-Mailin-trackclick": "0",
+        "X-Mailin-Tag": "admin-verification"
+      },
+      tags: ["admin-verification"]
     });
   });
 

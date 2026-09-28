@@ -11,7 +11,75 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div class="app-layout" id="appLayout">
+  <!-- DEDICATED FULL-SCREEN LOGIN PAGE (Authentication Gate) -->
+  <div class="login-page-container" id="loginScreen" style="display: flex;">
+    <div class="login-card">
+      <div class="login-brand-header">
+        <div class="login-brand-icon">
+          <svg width="48" height="48" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="36" height="36" rx="10" fill="url(#login-logo-grad)"/>
+            <path d="M18 9C12.477 9 8 10.343 8 12C8 13.657 12.477 15 18 15C23.523 15 28 13.657 28 12C28 10.343 23.523 9 18 9Z" fill="#93C5FD"/>
+            <path d="M28 14.5C28 16.157 23.523 17.5 18 17.5C12.477 17.5 8 16.157 8 14.5V18.5C8 20.157 12.477 21.5 18 21.5C23.523 21.5 28 20.157 28 18.5V14.5Z" fill="#60A5FA"/>
+            <path d="M28 21C28 22.657 23.523 24 18 24C12.477 24 8 22.657 8 21V25C8 26.657 12.477 28 18 28C23.523 28 28 26.657 28 25V21Z" fill="#3B82F6"/>
+            <defs>
+              <linearGradient id="login-logo-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#1E3A8A"/>
+                <stop offset="1" stop-color="#2563EB"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1 class="login-brand-title">DataVault6</h1>
+        <p class="login-brand-subtitle">Centralized Dataset Collection System</p>
+        <div class="login-portal-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Administrator Access Portal</span>
+        </div>
+      </div>
+
+      <form id="mainLoginForm" class="login-form">
+        <div class="login-form-group">
+          <label class="login-label" for="loginEmailInput">Email Address</label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </span>
+            <input type="email" class="login-input" id="loginEmailInput" name="email" required placeholder="admin@domain.com" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="login-form-group">
+          <label class="login-label" for="loginPasswordInput">Password</label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input type="password" class="login-input" id="loginPasswordInput" name="password" required placeholder="••••••••••••" autocomplete="current-password">
+            <button type="button" class="login-toggle-pwd" id="btnToggleLoginPwd" title="Show/Hide Password">
+              <svg id="iconEyeOpen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="iconEyeClosed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="loginErrorMsg" class="login-error-banner" style="display: none;"></div>
+
+        <button type="submit" class="btn-login-submit" id="btnSubmitLogin">
+          <span id="loginBtnText">Sign In to Platform</span>
+        </button>
+      </form>
+
+      <div class="login-card-footer">
+        <div class="login-security-indicator">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>End-to-End Encrypted Session • Argon2id Auth</span>
+        </div>
+        <p class="login-helper-text">New administrator? Open the invitation link sent to your email to verify your account and configure your password.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout" id="appLayout" style="display: none;">
     <!-- LEFT SIDEBAR -->
     <aside class="sidebar" id="sidebar">
       <!-- Brand Logo -->
@@ -300,6 +368,15 @@
                 <div class="profile-dropdown-name" id="menuUserName">Super Admin</div>
                 <div class="profile-dropdown-email" id="menuUserEmail">superadmin@nexus6.internal</div>
               </div>
+              <button class="dropdown-item" id="btnMenuProfile">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>My Profile</span>
+              </button>
+              <button class="dropdown-item" id="btnMenuSettings">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Platform Settings</span>
+              </button>
+              <div class="dropdown-divider"></div>
               <button class="dropdown-item" id="btnOpenLoginModal">
                 <span>Switch / Sign In</span>
               </button>
@@ -970,6 +1047,470 @@
               <!-- Dynamically rendered by DataRequestsManager -->
             </div>
           </div>
+
+          <!-- DEDICATED PROFILE SCREEN -->
+          <div class="profile-screen-wrap" id="profileScreenWrap" style="display: none;">
+            <!-- Top Bar & Breadcrumb -->
+            <div class="db-screen-top-bar">
+              <button class="btn-back-dashboard" id="btnBackFromProfile" title="Return to Dashboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>&larr; Back to Dashboard</span>
+              </button>
+              <div class="db-breadcrumbs">
+                <a href="#dashboard" class="breadcrumb-link" id="breadcrumbDashboardProfile">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-category">Account</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current-name">Administrator Profile</span>
+              </div>
+            </div>
+
+            <!-- Profile Hero Banner -->
+            <div class="profile-hero" id="profileHero">
+              <div class="profile-hero-content">
+                <div class="profile-avatar-large" id="profileLargeAvatar">SA</div>
+                <div class="profile-hero-details">
+                  <div class="profile-hero-title-row">
+                    <h2 class="profile-hero-name" id="profileHeroName">Super Admin</h2>
+                    <span class="profile-role-badge" id="profileHeroRoleBadge">Super Administrator</span>
+                    <span class="profile-verified-badge" id="profileHeroVerifiedBadge">✓ Verified</span>
+                  </div>
+                  <div class="profile-hero-email" id="profileHeroEmail">superadmin@nexus6.internal</div>
+                  <div class="profile-meta-pills">
+                    <span class="profile-meta-pill">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                      <span id="profileHeroDept">Data Operations</span>
+                    </span>
+                    <span class="profile-meta-pill">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <span id="profileHeroLastActive">Active Session</span>
+                    </span>
+                    <span class="profile-meta-pill">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      <span>Full Multi-Engine Privileges</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Profile Cards Grid Layout -->
+            <div class="profile-grid-container">
+              <!-- Card 1: Personal & Operational Information -->
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <div class="profile-card-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="profile-card-title">Profile Information</h3>
+                    <p class="profile-card-desc">Update personal operational details and organizational unit</p>
+                  </div>
+                </div>
+                <form id="profileInfoForm" class="profile-form">
+                  <div class="form-group">
+                    <label for="profileInputName">Full Name *</label>
+                    <input type="text" id="profileInputName" required placeholder="Administrator Name" value="Super Admin">
+                  </div>
+                  <div class="form-group">
+                    <label for="profileInputEmail">Email Address *</label>
+                    <input type="email" id="profileInputEmail" required placeholder="admin@example.org" value="superadmin@nexus6.internal">
+                  </div>
+                  <div class="form-group">
+                    <label for="profileInputDept">Department / Operational Unit</label>
+                    <input type="text" id="profileInputDept" placeholder="e.g. Data Architecture" value="Data Operations">
+                  </div>
+                  <div class="form-group">
+                    <label>System Role & Privileges</label>
+                    <input type="text" id="profileInputRole" disabled value="Super Administrator (Root)" style="opacity: 0.75; background: var(--bg-hover);">
+                  </div>
+                  <button type="submit" class="btn-primary" id="btnSaveProfileInfo" style="width: 100%; margin-top: 10px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    <span>Save Profile Information</span>
+                  </button>
+                </form>
+              </div>
+
+              <!-- Card 2: Security & Password Management -->
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <div class="profile-card-icon" style="background: rgba(16, 185, 129, 0.12); color: #10B981; border-color: rgba(16, 185, 129, 0.25);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="profile-card-title">Security & Credentials</h3>
+                    <p class="profile-card-desc">Manage account password using Argon2id encryption</p>
+                  </div>
+                </div>
+                <form id="profilePasswordForm" class="profile-form">
+                  <div class="form-group">
+                    <label for="profileCurrentPassword">Current Password</label>
+                    <input type="password" id="profileCurrentPassword" placeholder="Enter current password" autocomplete="current-password">
+                  </div>
+                  <div class="form-group">
+                    <label for="profileNewPassword">New Password (at least 12 characters)</label>
+                    <input type="password" id="profileNewPassword" minlength="12" placeholder="Enter new strong password" autocomplete="new-password">
+                  </div>
+                  <div class="form-group">
+                    <label for="profileConfirmPassword">Confirm New Password</label>
+                    <input type="password" id="profileConfirmPassword" minlength="12" placeholder="Re-enter new password" autocomplete="new-password">
+                  </div>
+                  <div id="profilePasswordAlert" class="admin-alert admin-alert-error" style="display: none; margin-bottom: 12px;"></div>
+                  <button type="submit" class="btn-primary" id="btnChangePassword" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #059669 0%, #10B981 100%);">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Update Password</span>
+                  </button>
+                </form>
+              </div>
+
+              <!-- Card 3: Database Engine Access & Permissions -->
+              <div class="profile-card profile-card-wide">
+                <div class="profile-card-header">
+                  <div class="profile-card-icon" style="background: rgba(14, 165, 233, 0.12); color: #0284C7; border-color: rgba(14, 165, 233, 0.25);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="profile-card-title">Authorized Database Engines</h3>
+                    <p class="profile-card-desc">Active connectivity protocols and partition management permissions</p>
+                  </div>
+                </div>
+                <div class="engine-perm-grid">
+                  <div class="engine-perm-box">
+                    <div class="engine-perm-top">
+                      <span class="badge badge-postgres">PostgreSQL</span>
+                      <span class="status-badge-admin-active">Connected</span>
+                    </div>
+                    <div class="engine-perm-desc">System Catalog, Relational Datasets, Operational Metadata</div>
+                    <div class="engine-perm-tags">
+                      <span class="engine-tag">READ</span><span class="engine-tag">WRITE</span><span class="engine-tag">DDL</span><span class="engine-tag">SCHEMA</span>
+                    </div>
+                  </div>
+                  <div class="engine-perm-box">
+                    <div class="engine-perm-top">
+                      <span class="badge badge-mysql">MySQL</span>
+                      <span class="status-badge-admin-active">Connected</span>
+                    </div>
+                    <div class="engine-perm-desc">Tabular Data Vault, Analytical Partitioning, Ingestion</div>
+                    <div class="engine-perm-tags">
+                      <span class="engine-tag">READ</span><span class="engine-tag">WRITE</span><span class="engine-tag">PARTITION</span>
+                    </div>
+                  </div>
+                  <div class="engine-perm-box">
+                    <div class="engine-perm-top">
+                      <span class="badge badge-mongodb">MongoDB</span>
+                      <span class="status-badge-admin-active">Connected</span>
+                    </div>
+                    <div class="engine-perm-desc">Document Collections, Nested JSON, Semi-Structured Schemas</div>
+                    <div class="engine-perm-tags">
+                      <span class="engine-tag">READ</span><span class="engine-tag">WRITE</span><span class="engine-tag">AGGREGATE</span>
+                    </div>
+                  </div>
+                  <div class="engine-perm-box">
+                    <div class="engine-perm-top">
+                      <span class="badge badge-sqlserver">SQLServer</span>
+                      <span class="status-badge-admin-active">Connected</span>
+                    </div>
+                    <div class="engine-perm-desc">Enterprise Public Datasets, Relational Warehousing</div>
+                    <div class="engine-perm-tags">
+                      <span class="engine-tag">READ</span><span class="engine-tag">WRITE</span><span class="engine-tag">QUERY</span>
+                    </div>
+                  </div>
+                  <div class="engine-perm-box">
+                    <div class="engine-perm-top">
+                      <span class="badge badge-neo4j">Neo4J</span>
+                      <span class="status-badge-admin-active">Connected</span>
+                    </div>
+                    <div class="engine-perm-desc">Graph Topologies, Node-Edge Networks, Path Traversal</div>
+                    <div class="engine-perm-tags">
+                      <span class="engine-tag">READ</span><span class="engine-tag">WRITE</span><span class="engine-tag">CYPHER</span>
+                    </div>
+                  </div>
+                  <div class="engine-perm-box">
+                    <div class="engine-perm-top">
+                      <span class="badge badge-couchbase">CouchBase</span>
+                      <span class="status-badge-admin-active">Connected</span>
+                    </div>
+                    <div class="engine-perm-desc">Distributed Key-Value Buckets, Sub-Millisecond Caching</div>
+                    <div class="engine-perm-tags">
+                      <span class="engine-tag">READ</span><span class="engine-tag">WRITE</span><span class="engine-tag">BUCKET</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 4: Session & Danger Zone -->
+              <div class="profile-card profile-card-wide">
+                <div class="profile-card-header">
+                  <div class="profile-card-icon" style="background: rgba(239, 68, 68, 0.12); color: #EF4444; border-color: rgba(239, 68, 68, 0.25);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="profile-card-title">Session & Account Actions</h3>
+                    <p class="profile-card-desc">Active authenticated session token controls</p>
+                  </div>
+                </div>
+                <div class="profile-session-row">
+                  <div>
+                    <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px;">Current Web Session</div>
+                    <div style="font-size: 12px; color: var(--text-muted);" id="profileSessionInfo">JWT Access Token with 30-Day Refresh Cookie (Active)</div>
+                  </div>
+                  <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-secondary" id="btnProfileSwitchAccount">Switch Account</button>
+                    <button type="button" class="btn-danger" id="btnProfileSignOut">Sign Out</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DEDICATED SETTINGS SCREEN -->
+          <div class="settings-screen-wrap" id="settingsScreenWrap" style="display: none;">
+            <!-- Top Bar & Breadcrumb -->
+            <div class="db-screen-top-bar">
+              <button class="btn-back-dashboard" id="btnBackFromSettings" title="Return to Dashboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>&larr; Back to Dashboard</span>
+              </button>
+              <div class="db-breadcrumbs">
+                <a href="#dashboard" class="breadcrumb-link" id="breadcrumbDashboardSettings">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-category">Account</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current-name">System & Platform Settings</span>
+              </div>
+            </div>
+
+            <!-- Settings Hero Banner -->
+            <div class="settings-hero" id="settingsHero">
+              <div class="settings-hero-content">
+                <div class="settings-hero-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                </div>
+                <div class="settings-hero-details">
+                  <div class="settings-hero-title-row">
+                    <h2 class="settings-hero-name">Platform Configuration & Preferences</h2>
+                    <span class="db-engine-status-pill" style="border-color: rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.08); color: #6366F1;">
+                      <span class="status-pulse-dot" style="background: #6366F1;"></span>
+                      <span>Config Engine Active</span>
+                    </span>
+                  </div>
+                  <p class="settings-hero-desc">
+                    Customize your user interface, email alerts, default database targets, and network endpoint configurations.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Grid Layout -->
+            <div class="settings-grid-container">
+              <!-- Card 1: Appearance & UI Preferences -->
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <div class="settings-card-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="settings-card-title">Appearance & Display</h3>
+                    <p class="settings-card-desc">Control color theme, table density, and motion effects</p>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Color Theme</div>
+                    <div class="settings-subtext">Select your preferred viewing mode</div>
+                  </div>
+                  <div class="theme-choice-group">
+                    <button type="button" class="theme-btn" id="themeOptLight" data-theme-val="light">Light</button>
+                    <button type="button" class="theme-btn" id="themeOptDark" data-theme-val="dark">Dark</button>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Table Display Density</div>
+                    <div class="settings-subtext">Adjust row height and spacing for dataset tables</div>
+                  </div>
+                  <div class="theme-choice-group">
+                    <button type="button" class="theme-btn active" id="densityOptComfortable">Comfortable</button>
+                    <button type="button" class="theme-btn" id="densityOptCompact">Compact</button>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Glassmorphism & Backdrop Blur</div>
+                    <div class="settings-subtext">Enable translucent card surfaces and blur shaders</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleGlassmorphism" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Smooth UI Transitions</div>
+                    <div class="settings-subtext">Micro-animations when switching tabs or filtering</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleAnimations" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Card 2: Notification & Communication -->
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <div class="settings-card-icon" style="background: rgba(245, 158, 11, 0.12); color: #D97706; border-color: rgba(245, 158, 11, 0.25);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="settings-card-title">Notifications & Alerts</h3>
+                    <p class="settings-card-desc">Configure in-app banners and operational email triggers</p>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">In-App Toast Messages</div>
+                    <div class="settings-subtext">Instant status alerts for downloads, uploads, and edits</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleToastAlerts" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">New Data Request Alerts</div>
+                    <div class="settings-subtext">Notify when users submit dataset ingestion proposals</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleRequestAlerts" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Security & Audit Event Alerts</div>
+                    <div class="settings-subtext">Trigger warnings on admin status changes and logins</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleSecurityAlerts" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Email Gateway Provider</div>
+                    <div class="settings-subtext">Brevo SMTP Cloud Service Status</div>
+                  </div>
+                  <span class="status-badge-admin-active">Connected (Brevo)</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Default Storage & Ingestion Preferences -->
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <div class="settings-card-icon" style="background: rgba(14, 165, 233, 0.12); color: #0284C7; border-color: rgba(14, 165, 233, 0.25);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="settings-card-title">Storage & Export Defaults</h3>
+                    <p class="settings-card-desc">Set preferred database partition and export formats</p>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="settingDefaultEngine">Default Storage Engine</label>
+                  <select id="settingDefaultEngine">
+                    <option value="PostgreSQL">PostgreSQL (Relational / System)</option>
+                    <option value="MySQL" selected>MySQL (High Performance Relational)</option>
+                    <option value="MongoDB">MongoDB (Document / JSON)</option>
+                    <option value="SQLServer">SQLServer (Enterprise Tabular)</option>
+                    <option value="Neo4J">Neo4J (Graph Analytics)</option>
+                    <option value="CouchBase">CouchBase (Distributed Memory)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="settingDefaultExport">Default Export Format</label>
+                  <select id="settingDefaultExport">
+                    <option value="csv" selected>CSV (Comma Separated Values)</option>
+                    <option value="json">JSON (Full Object Structure)</option>
+                    <option value="xlsx">XLSX (Microsoft Excel Workbook)</option>
+                    <option value="ndjson">NDJSON (Newline Delimited JSON)</option>
+                  </select>
+                </div>
+
+                <div class="settings-row" style="margin-top: 14px;">
+                  <div>
+                    <div class="settings-label">Automated Schema Profiling</div>
+                    <div class="settings-subtext">Infer column types & recommend storage on upload</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleAutoProfile" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Card 4: Network, Public Endpoint & API Health -->
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <div class="settings-card-icon" style="background: rgba(16, 185, 129, 0.12); color: #10B981; border-color: rgba(16, 185, 129, 0.25);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="settings-card-title">Network & Public Endpoint</h3>
+                    <p class="settings-card-desc">Live public HTTPS endpoint for multi-device access</p>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Configured Public Base URL</label>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="settingPublicUrlInput" readonly value="https://viselike-lushness-repacking.ngrok-free.dev" style="background: var(--bg-hover); font-family: monospace; font-size: 12px; color: var(--primary-600);">
+                    <button type="button" class="btn-secondary" id="btnCopyPublicUrl" style="white-space: nowrap; padding: 0 14px;">Copy</button>
+                  </div>
+                  <small style="color: var(--text-muted); font-size: 11.5px; margin-top: 4px; display: block;">
+                    Used in verification emails so links open on phones, tablets, and remote desktops.
+                  </small>
+                </div>
+
+                <div class="settings-row" style="margin-top: 14px;">
+                  <div>
+                    <div class="settings-label">Backend Health Check</div>
+                    <div class="settings-subtext" id="apiHealthStatusText">Checking /api/health...</div>
+                  </div>
+                  <button type="button" class="btn-secondary" id="btnTestApiHealth" style="font-size: 12px; padding: 6px 12px;">Ping API</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Bottom Actions Bar -->
+            <div class="settings-actions-bar">
+              <button type="button" class="btn-secondary" id="btnResetSettings">Reset to Defaults</button>
+              <button type="button" class="btn-primary" id="btnSaveAllSettings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Save All Preferences</span>
+              </button>
+            </div>
+          </div>
         </main>
 
         <!-- RIGHT SIDEBAR PANEL -->
@@ -1287,32 +1828,96 @@
     </div>
   </div>
 
-  <!-- MODAL: AUTHENTICATION / LOGIN -->
-  <div class="modal-overlay" id="loginModal" style="display: none;">
-    <div class="modal-box" style="max-width: 420px;">
+  <!-- MODAL: COPY INVITATION LINK -->
+  <div class="modal-overlay" id="copyInviteLinkModal" style="display: none;">
+    <div class="modal-box" style="max-width: 480px;">
       <div class="modal-header">
         <div>
-          <h3 class="modal-title">Sign In to DataVault6</h3>
-          <p class="modal-subtitle">Authenticate to access datasets and operational logs</p>
+          <h3 class="modal-title" id="copyInviteModalTitle">Administrator Verification Link</h3>
+          <p class="modal-subtitle" id="copyInviteModalSubtitle">Email verification & password configuration URL</p>
         </div>
-        <button class="modal-close-btn" id="closeLoginModal">&times;</button>
+        <button class="modal-close-btn" id="closeCopyInviteModal">&times;</button>
       </div>
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="loginEmailInput">Email Address *</label>
-          <input type="email" id="loginEmailInput" required placeholder="superadmin@nexus6.internal" value="superadmin@nexus6.internal">
+      <div style="padding: 12px 0;">
+        <div class="admin-alert admin-alert-success" id="copyInviteAlertBox" style="margin-top: 0; margin-bottom: 14px;">
+          <strong id="copyInviteAdminName">Administrator</strong> invitation prepared (Status: <strong>PENDING</strong>).
+          <div style="font-size: 11.5px; margin-top: 4px; opacity: 0.9;">
+            The verification request has been queued via Brevo. You can also copy the direct public URL below and send it immediately.
+          </div>
         </div>
         <div class="form-group">
-          <label for="loginPasswordInput">Password *</label>
-          <input type="password" id="loginPasswordInput" required placeholder="••••••••••••" value="SuperAdmin@123456">
+          <label style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Public Verification & Password Setup URL:</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="copyInviteUrlInput" readonly style="background: var(--bg-surface-alt); border: 1.5px solid var(--border-subtle); color: var(--primary-600); font-family: monospace; font-size: 12px; padding: 8px 10px; border-radius: 6px; width: 100%;">
+            <button type="button" class="btn-primary" id="btnModalCopyLink" style="white-space: nowrap; padding: 8px 14px; font-size: 12px;">Copy Link</button>
+          </div>
+          <small style="color: var(--text-muted); font-size: 11px; margin-top: 6px; display: block;">
+            Works on any phone, tablet, laptop, or desktop browser. The administrator will be prompted to set their password before activating.
+          </small>
         </div>
-        <div id="loginErrorMsg" style="color: var(--rose-500); font-size: 12px; margin-bottom: 12px; display: none;"></div>
-        <div class="form-actions">
-          <button type="submit" class="btn-primary" id="btnSubmitLogin" style="width: 100%;">
-            <span id="loginBtnText">Sign In</span>
+      </div>
+      <div class="form-actions" style="margin-top: 14px;">
+        <button type="button" class="btn-secondary" id="btnDoneCopyInviteModal" style="width: 100%;">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VERIFY EMAIL & SET PASSWORD -->
+  <div class="modal-overlay" id="setupPasswordModal" style="display: none;">
+    <div class="modal-box" style="max-width: 460px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="setupPasswordTitle">Activate Administrator Account</h3>
+          <p class="modal-subtitle" id="setupPasswordSubtitle">Verify email and set your administrator credentials</p>
+        </div>
+        <button class="modal-close-btn" id="closeSetupPasswordModal">&times;</button>
+      </div>
+
+      <!-- State 1: Verifying token -->
+      <div id="setupPasswordLoading" style="padding: 30px; text-align: center; color: var(--text-muted);">
+        <span class="spinner" style="margin-right: 8px;"></span> Verifying invitation token...
+      </div>
+
+      <!-- State 2: Error verifying token -->
+      <div id="setupPasswordErrorState" style="display: none; padding: 12px 0;">
+        <div class="admin-alert admin-alert-error" id="setupPasswordErrorMsg" style="margin-top: 0; margin-bottom: 16px;"></div>
+        <div style="text-align: center;">
+          <button type="button" class="btn-secondary" id="btnCloseSetupErrorBtn">Return to Dashboard</button>
+        </div>
+      </div>
+
+      <!-- State 3: Token valid -> Set Password Form -->
+      <form id="setupPasswordForm" style="display: none;">
+        <div class="admin-alert admin-alert-success" style="margin-top: 0; margin-bottom: 16px;">
+          ✓ Email verified for <strong id="setupVerifiedEmail"></strong>. Please choose a secure password (min 12 characters).
+        </div>
+
+        <div class="form-group">
+          <label for="newAdminPasswordInput">New Password * (at least 12 characters)</label>
+          <input type="password" id="newAdminPasswordInput" required minlength="12" placeholder="Enter secure password">
+        </div>
+
+        <div class="form-group">
+          <label for="confirmAdminPasswordInput">Confirm Password *</label>
+          <input type="password" id="confirmAdminPasswordInput" required minlength="12" placeholder="Re-type secure password">
+        </div>
+
+        <div id="setupFormAlert" class="admin-alert admin-alert-error" style="display: none; margin-bottom: 14px;"></div>
+
+        <div class="form-actions" style="margin-top: 18px;">
+          <button type="submit" class="btn-primary" id="btnSubmitSetPassword" style="width: 100%;">
+            <span>Set Password & Activate Account</span>
           </button>
         </div>
       </form>
+
+      <!-- State 4: Success -> Proceed to Login -->
+      <div id="setupPasswordSuccessState" style="display: none; padding: 24px 0; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 10px;">🎉</div>
+        <h4 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Password Successfully Set!</h4>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">Your administrator account is now fully active.</p>
+        <button type="button" class="btn-primary" id="btnGoToLoginAfterSetup" style="width: 100%;">Sign In Now</button>
+      </div>
     </div>
   </div>
 
@@ -1445,10 +2050,12 @@
           <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group">
               <label for="adminRoleSelect">Administrative Role</label>
-              <select id="adminRoleSelect">
-                <option value="ADMIN">Data Administrator (Standard)</option>
-                <option value="SUPER_ADMIN">Super Administrator (Full Privileges)</option>
+              <select id="adminRoleSelect" disabled style="opacity: 0.85; cursor: not-allowed; background: var(--bg-hover, rgba(255, 255, 255, 0.05));">
+                <option value="ADMIN" selected>Data Administrator (Standard)</option>
               </select>
+              <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                The platform operates with 1 Super Administrator. New administrators are created as standard Data Administrators.
+              </small>
             </div>
             <div class="form-group">
               <label for="adminDepartmentInput">Department / Unit</label>

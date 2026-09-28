@@ -103,6 +103,15 @@ export function createAuthRouter(authService = new AuthService(), adminService =
     }
   });
 
+  router.post("/verify-email", authActionRateLimit, async (request, response, next) => {
+    try {
+      const token = tokenSchema.parse(request.body?.token ?? request.query.token);
+      response.status(200).json({ status: "verified", ...(await adminService.verifyEmail(token)) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.post("/set-password", authActionRateLimit, async (request, response, next) => {
     try {
       const input = setPasswordSchema.parse(request.body);

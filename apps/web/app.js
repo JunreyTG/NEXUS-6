@@ -193,16 +193,25 @@
 
   const AuthManager = {
     currentUser: null,
+    dashboardLoaded: false,
 
     async init() {
       this.bindEvents();
+      const params = new URLSearchParams(window.location.search);
+      const hasVerifyToken = params.has("token") || window.location.pathname.includes("verify-email");
+
       // Try to fetch current user profile
       try {
         const user = await apiClient.request("/api/auth/me");
         this.setUser(user);
+        this.showAppLayout();
       } catch {
-        // If not authenticated, open login modal
-        this.showLoginModal();
+        this.currentUser = null;
+        if (!hasVerifyToken) {
+          this.showLoginScreen();
+        } else {
+          this.hideAppLayout();
+        }
       }
     },
 
@@ -231,18 +240,55 @@
       if (menuEmailEl) menuEmailEl.textContent = user.email || "";
     },
 
-    showLoginModal() {
-      const modal = document.getElementById("loginModal");
-      if (modal) {
-        modal.style.display = "flex";
-        const emailInput = document.getElementById("loginEmailInput");
-        if (emailInput) emailInput.focus();
+    showAppLayout() {
+      const loginScreen = document.getElementById("loginScreen");
+      const appLayout = document.getElementById("appLayout");
+      if (loginScreen) loginScreen.style.display = "none";
+      if (appLayout) appLayout.style.display = "flex";
+
+      // Load data only after authentication
+      if (!this.dashboardLoaded) {
+        this.dashboardLoaded = true;
+        DashboardManager.init();
+        DatasetsManager.init();
+        ActivityLogsManager.init();
+        NotificationsManager.init();
+      } else {
+        DashboardManager.loadStats();
+        DatasetsManager.loadDatasets();
+        ActivityLogsManager.loadRecentActivity();
+        NotificationsManager.loadNotifications();
       }
     },
 
+    showLoginScreen() {
+      const loginScreen = document.getElementById("loginScreen");
+      const appLayout = document.getElementById("appLayout");
+      if (appLayout) appLayout.style.display = "none";
+      if (loginScreen) {
+        loginScreen.style.display = "flex";
+        const emailInput = document.getElementById("loginEmailInput");
+        const pwdInput = document.getElementById("loginPasswordInput");
+        const errorMsg = document.getElementById("loginErrorMsg");
+        if (errorMsg) errorMsg.style.display = "none";
+        if (pwdInput) pwdInput.value = "";
+        if (emailInput && !emailInput.value) emailInput.focus();
+      }
+    },
+
+    showLoginModal() {
+      this.showLoginScreen();
+    },
+
     hideLoginModal() {
-      const modal = document.getElementById("loginModal");
-      if (modal) modal.style.display = "none";
+      if (this.currentUser) {
+        this.showAppLayout();
+      }
+    },
+
+    hideAppLayout() {
+      const appLayout = document.getElementById("appLayout");
+      if (appLayout) appLayout.style.display = "none";
     },
 
     bindEvents() {
@@ -250,8 +296,26 @@
       const menu = document.getElementById("profileDropdownMenu");
       const btnLogout = document.getElementById("btnLogout");
       const btnOpenLogin = document.getElementById("btnOpenLoginModal");
-      const closeLogin = document.getElementById("closeLoginModal");
-      const loginForm = document.getElementById("loginForm");
+      const loginForm = document.getElementById("mainLoginForm");
+      const btnTogglePwd = document.getElementById("btnToggleLoginPwd");
+
+      if (btnTogglePwd) {
+        btnTogglePwd.addEventListener("click", () => {
+          const pwdInput = document.getElementById("loginPasswordInput");
+          const eyeOpen = document.getElementById("iconEyeOpen");
+          const eyeClosed = document.getElementById("iconEyeClosed");
+          if (!pwdInput) return;
+          if (pwdInput.type === "password") {
+            pwdInput.type = "text";
+            if (eyeOpen) eyeOpen.style.display = "none";
+            if (eyeClosed) eyeClosed.style.display = "block";
+          } else {
+            pwdInput.type = "password";
+            if (eyeOpen) eyeOpen.style.display = "block";
+            if (eyeClosed) eyeClosed.style.display = "none";
+          }
+        });
+      }
 
       if (chip && menu) {
         chip.addEventListener("click", (e) => {
@@ -270,19 +334,14 @@
         btnOpenLogin.addEventListener("click", (e) => {
           e.preventDefault();
           if (menu) menu.classList.remove("active");
-          this.showLoginModal();
-        });
-      }
-
-      if (closeLogin) {
-        closeLogin.addEventListener("click", () => {
-          this.hideLoginModal();
+          this.showLoginScreen();
         });
       }
 
       if (btnLogout) {
         btnLogout.addEventListener("click", async (e) => {
           e.preventDefault();
+          if (menu) menu.classList.remove("active");
           try {
             await apiClient.request("/api/auth/logout", { method: "POST" });
           } catch {
@@ -290,8 +349,8 @@
           }
           apiClient.clearAuth();
           this.currentUser = null;
+          this.showLoginScreen();
           showToast("Signed out successfully", "info");
-          this.showLoginModal();
         });
       }
 
@@ -306,7 +365,7 @@
           if (errorMsg) errorMsg.style.display = "none";
           if (btnSubmit) {
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<span class="spinner"></span> Signing in...`;
+            btnSubmit.innerHTML = `<span class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin-right: 6px;"></span> Authenticating...`;
           }
 
           try {
@@ -319,24 +378,18 @@
               apiClient.setToken(result.accessToken);
               const userProfile = result.user || { email, role: "ADMIN" };
               this.setUser(userProfile);
-              this.hideLoginModal();
-              showToast("Signed in successfully!");
-
-              // Refresh all dashboard and table components
-              DashboardManager.loadStats();
-              DatasetsManager.loadDatasets();
-              ActivityLogsManager.loadRecentActivity();
-              NotificationsManager.loadNotifications();
+              this.showAppLayout();
+              showToast(`Signed in successfully as ${userProfile.name || userProfile.email}!`);
             }
           } catch (err) {
             if (errorMsg) {
               errorMsg.textContent = err.message || "Invalid credentials. Please verify your email and password.";
-              errorMsg.style.display = "block";
+              errorMsg.style.display = "flex";
             }
           } finally {
             if (btnSubmit) {
               btnSubmit.disabled = false;
-              btnSubmit.innerHTML = `<span>Sign In</span>`;
+              btnSubmit.innerHTML = `<span>Sign In to Platform</span>`;
             }
           }
         });
@@ -2940,6 +2993,110 @@
       showToast("Switched to Data Requests Collaboration Board");
     },
 
+    openProfile() {
+      this.activeMode = "profile";
+      this.activeDb = null;
+
+      // 1. Hide other views
+      const overviewGroup = document.getElementById("dashboardOverviewGroup");
+      if (overviewGroup) overviewGroup.style.display = "none";
+
+      const screenWrap = document.getElementById("databaseScreenHeaderWrap");
+      if (screenWrap) screenWrap.style.display = "none";
+
+      const tableCard = document.getElementById("datasetsTableSection");
+      if (tableCard) tableCard.style.display = "none";
+
+      const specsPanel = document.getElementById("dbSpecsPanel");
+      if (specsPanel) specsPanel.style.display = "none";
+
+      const analyticsWrap = document.getElementById("analyticsScreenWrap");
+      if (analyticsWrap) analyticsWrap.style.display = "none";
+
+      const requestsWrap = document.getElementById("dataRequestsScreenWrap");
+      if (requestsWrap) requestsWrap.style.display = "none";
+
+      const settingsWrap = document.getElementById("settingsScreenWrap");
+      if (settingsWrap) settingsWrap.style.display = "none";
+
+      // 2. Expand grid to 1 column full width & hide right panel
+      const dashboardGrid = document.querySelector(".dashboard-grid");
+      if (dashboardGrid) dashboardGrid.classList.add("database-view-active");
+
+      // 3. Show Profile Screen
+      const profileWrap = document.getElementById("profileScreenWrap");
+      if (profileWrap) profileWrap.style.display = "block";
+
+      // 4. Highlight active sidebar item
+      document.querySelectorAll(".sidebar-nav .nav-item").forEach(item => {
+        if (item.id === "nav-profile") {
+          item.classList.add("active");
+        } else {
+          item.classList.remove("active");
+        }
+      });
+
+      // 5. Populate profile data
+      if (typeof ProfileManager !== "undefined") {
+        ProfileManager.loadProfile();
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      showToast("Opened Administrator Profile");
+    },
+
+    openSettings() {
+      this.activeMode = "settings";
+      this.activeDb = null;
+
+      // 1. Hide other views
+      const overviewGroup = document.getElementById("dashboardOverviewGroup");
+      if (overviewGroup) overviewGroup.style.display = "none";
+
+      const screenWrap = document.getElementById("databaseScreenHeaderWrap");
+      if (screenWrap) screenWrap.style.display = "none";
+
+      const tableCard = document.getElementById("datasetsTableSection");
+      if (tableCard) tableCard.style.display = "none";
+
+      const specsPanel = document.getElementById("dbSpecsPanel");
+      if (specsPanel) specsPanel.style.display = "none";
+
+      const analyticsWrap = document.getElementById("analyticsScreenWrap");
+      if (analyticsWrap) analyticsWrap.style.display = "none";
+
+      const requestsWrap = document.getElementById("dataRequestsScreenWrap");
+      if (requestsWrap) requestsWrap.style.display = "none";
+
+      const profileWrap = document.getElementById("profileScreenWrap");
+      if (profileWrap) profileWrap.style.display = "none";
+
+      // 2. Expand grid to 1 column full width & hide right panel
+      const dashboardGrid = document.querySelector(".dashboard-grid");
+      if (dashboardGrid) dashboardGrid.classList.add("database-view-active");
+
+      // 3. Show Settings Screen
+      const settingsWrap = document.getElementById("settingsScreenWrap");
+      if (settingsWrap) settingsWrap.style.display = "block";
+
+      // 4. Highlight active sidebar item
+      document.querySelectorAll(".sidebar-nav .nav-item").forEach(item => {
+        if (item.id === "nav-settings") {
+          item.classList.add("active");
+        } else {
+          item.classList.remove("active");
+        }
+      });
+
+      // 5. Populate settings data
+      if (typeof SettingsManager !== "undefined") {
+        SettingsManager.loadSettings();
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      showToast("Opened Platform Settings");
+    },
+
     closeDatabaseScreen() {
       this.activeMode = null;
       this.activeDb = null;
@@ -2955,6 +3112,12 @@
 
       const requestsWrap = document.getElementById("dataRequestsScreenWrap");
       if (requestsWrap) requestsWrap.style.display = "none";
+
+      const profileWrap = document.getElementById("profileScreenWrap");
+      if (profileWrap) profileWrap.style.display = "none";
+
+      const settingsWrap = document.getElementById("settingsScreenWrap");
+      if (settingsWrap) settingsWrap.style.display = "none";
 
       const dashboardGrid = document.querySelector(".dashboard-grid");
       if (dashboardGrid) dashboardGrid.classList.remove("database-view-active");
@@ -3678,6 +3841,41 @@
       document.getElementById("btnRefreshAdmins")?.addEventListener("click", () => {
         this.loadAdmins(true);
       });
+
+      // Copy invite link modal events
+      document.getElementById("btnModalCopyLink")?.addEventListener("click", () => {
+        const input = document.getElementById("copyInviteUrlInput");
+        if (input) {
+          navigator.clipboard?.writeText(input.value).then(() => {
+            showToast("Verification URL copied to clipboard!", "success");
+          }).catch(() => {
+            input.select();
+            document.execCommand("copy");
+            showToast("Verification URL copied to clipboard!", "success");
+          });
+        }
+      });
+
+      const closeCopyModal = () => {
+        const m = document.getElementById("copyInviteLinkModal");
+        if (m) m.style.display = "none";
+      };
+      document.getElementById("closeCopyInviteModal")?.addEventListener("click", closeCopyModal);
+      document.getElementById("btnDoneCopyInviteModal")?.addEventListener("click", closeCopyModal);
+    },
+
+    showCopyInviteModal(name, url) {
+      const modal = document.getElementById("copyInviteLinkModal");
+      const nameEl = document.getElementById("copyInviteAdminName");
+      const urlInput = document.getElementById("copyInviteUrlInput");
+      if (nameEl) nameEl.textContent = name || "Administrator";
+      if (urlInput) urlInput.value = url || "";
+      if (modal) modal.style.display = "flex";
+
+      // Automatically copy to clipboard if supported
+      navigator.clipboard?.writeText(url).then(() => {
+        showToast("Verification link copied to clipboard!", "success");
+      }).catch(() => {});
     },
 
     openModal(defaultTab = "create") {
@@ -3761,20 +3959,54 @@
 
       try {
         const payload = { name, email };
-        await apiClient.request("/api/admins", {
+        const res = await apiClient.request("/api/admins", {
           method: "POST",
           body: JSON.stringify(payload)
         });
 
+        const verificationUrl = res?.verificationUrl || "";
+
         if (succEl) {
           succEl.innerHTML = `
-            <strong>Administrator Successfully Provisioned!</strong><br>
-            Verification token and invitation email dispatched to <em>${escapeHtml(email)}</em>.
+            <div style="font-weight: 700; margin-bottom: 4px; color: #10B981; font-size: 13.5px;">✓ Administrator Invited (Status: PENDING)</div>
+            <div style="font-size: 12px; margin-bottom: 8px;">
+              An email verification request was queued for <strong>${escapeHtml(email)}</strong>.<br>
+              <strong>Security Rule:</strong> This account remains in <em>PENDING</em> status and <u>cannot log in or be activated</u> until the administrator opens the verification link and establishes an Argon2id password.
+            </div>
+            ${verificationUrl ? `
+              <div style="margin-top: 10px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px 12px;">
+                <div style="font-size: 11px; font-weight: 600; color: #93C5FD; margin-bottom: 6px;">Direct Public Verification URL:</div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="text" id="newAdminVerificationUrlInput" readonly value="${escapeHtml(verificationUrl)}" style="background: var(--bg-surface-alt, #0f172a); border: 1px solid var(--border-subtle, #334155); color: #38BDF8; font-family: monospace; font-size: 11.5px; padding: 6px 10px; border-radius: 6px; width: 100%;">
+                  <button type="button" class="btn-primary" id="btnCopyNewAdminLink" style="white-space: nowrap; padding: 6px 12px; font-size: 11.5px;">Copy Link</button>
+                </div>
+                <div style="font-size: 10.5px; color: var(--text-muted, #94a3b8); margin-top: 4px;">
+                  If Brevo delivery is delayed or disabled, you can send this public URL directly to the user's phone, tablet, or laptop.
+                </div>
+              </div>
+            ` : ""}
           `;
           succEl.style.display = "block";
+
+          if (verificationUrl) {
+            this.showCopyInviteModal(name, verificationUrl);
+          }
+
+          document.getElementById("btnCopyNewAdminLink")?.addEventListener("click", () => {
+            const input = document.getElementById("newAdminVerificationUrlInput");
+            if (input) {
+              navigator.clipboard?.writeText(input.value).then(() => {
+                showToast("Verification URL copied to clipboard!", "success");
+              }).catch(() => {
+                input.select();
+                document.execCommand("copy");
+                showToast("Verification URL copied to clipboard!", "success");
+              });
+            }
+          });
         }
 
-        showToast(`Administrator ${name} provisioned! Setup invite dispatched.`, "success");
+        showToast(`Administrator invited! Account is PENDING verification.`, "success");
 
         // Reset inputs
         if (nameInput) nameInput.value = "";
@@ -3782,13 +4014,6 @@
 
         // Reload admin list
         await this.loadAdmins(false);
-
-        // Switch to directory after 1.2s to show newly created admin
-        setTimeout(() => {
-          if (this.activeTab === "create") {
-            this.switchTab("directory");
-          }
-        }, 1200);
 
       } catch (err) {
         console.error("Failed to create admin:", err);
@@ -3898,7 +4123,7 @@
 
         const statusLabel = status === "ACTIVE" 
           ? "Active" 
-          : (status === "DISABLED" ? "Disabled" : "Pending Setup");
+          : (status === "DISABLED" ? "Disabled" : "Pending Verification");
 
         const isPending = status === "PENDING";
         const isDisabled = status === "DISABLED";
@@ -3916,13 +4141,22 @@
             <div class="admin-actions-cell">
               <span class="${statusBadgeClass}">${escapeHtml(statusLabel)}</span>
               ${isPending ? `
-                <button class="btn-secondary btn-resend-invite" data-id="${admin.id}" data-name="${escapeHtml(name)}" title="Resend setup invitation email" style="padding: 4px 10px; font-size: 11.5px;">
-                  Resend Invite
+                <button class="btn-secondary btn-resend-invite" data-id="${admin.id}" data-name="${escapeHtml(name)}" title="Resend verification email and copy link" style="padding: 4px 10px; font-size: 11.5px; color: #2563EB;">
+                  Resend &amp; Copy Link
                 </button>
-              ` : ""}
-              <button class="btn-secondary btn-toggle-status" data-id="${admin.id}" data-status="${status}" data-name="${escapeHtml(name)}" title="${isDisabled ? 'Enable Administrator' : 'Disable Administrator'}" style="padding: 4px 10px; font-size: 11.5px; ${isDisabled ? 'color: #059669;' : 'color: #EF4444;'}">
-                ${isDisabled ? "Enable" : "Disable"}
-              </button>
+                <button class="btn-secondary btn-revoke-invite" data-id="${admin.id}" data-name="${escapeHtml(name)}" title="Revoke this pending invitation" style="padding: 4px 10px; font-size: 11.5px; color: #EF4444;">
+                  Revoke
+                </button>
+              ` : `
+                <button class="btn-secondary btn-toggle-status" data-id="${admin.id}" data-status="${status}" data-name="${escapeHtml(name)}" title="${isDisabled ? 'Enable Administrator' : 'Disable Administrator'}" style="padding: 4px 10px; font-size: 11.5px; ${isDisabled ? 'color: #059669;' : 'color: #EF4444;'}">
+                  ${isDisabled ? "Enable" : "Disable"}
+                </button>
+                ${isDisabled ? `
+                  <button class="btn-secondary btn-delete-admin" data-id="${admin.id}" data-name="${escapeHtml(name)}" title="Permanently delete administrator" style="padding: 4px 10px; font-size: 11.5px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -1px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>Delete
+                  </button>
+                ` : ""}
+              `}
             </div>
           </div>
         `;
@@ -3938,6 +4172,15 @@
         });
       });
 
+      container.querySelectorAll(".btn-revoke-invite").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          const name = btn.dataset.name;
+          if (id) this.updateAdminStatus(id, "DISABLED", name, btn);
+        });
+      });
+
       container.querySelectorAll(".btn-toggle-status").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -3948,6 +4191,15 @@
           if (id) this.updateAdminStatus(id, nextStatus, name, btn);
         });
       });
+
+      container.querySelectorAll(".btn-delete-admin").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          const name = btn.dataset.name;
+          if (id) this.deleteAdmin(id, name, btn);
+        });
+      });
     },
 
     async resendVerification(id, name, buttonEl) {
@@ -3956,17 +4208,35 @@
         buttonEl.textContent = "Sending...";
       }
       try {
-        await apiClient.request(`/api/admins/${id}/resend-verification`, {
+        const res = await apiClient.request(`/api/admins/${id}/resend-verification`, {
           method: "POST"
         });
-        showToast(`Verification invitation resent to ${name || 'administrator'}`);
+        
+        if (res && res.verificationUrl) {
+          this.showCopyInviteModal(name || "Administrator", res.verificationUrl);
+          showToast(`Invite resent & verification link copied to clipboard!`, "success");
+          
+          // Show alert with the link for easy copying
+          const succEl = document.getElementById("createAdminSuccessMsg");
+          if (succEl) {
+            succEl.innerHTML = `
+              <strong>New Verification Link for ${escapeHtml(name || 'Admin')}:</strong><br>
+              <div style="margin-top: 6px; display: flex; gap: 8px;">
+                <input type="text" readonly value="${escapeHtml(res.verificationUrl)}" style="background: var(--bg-surface-alt); border: 1px solid var(--border-subtle); color: #38BDF8; font-family: monospace; font-size: 11.5px; padding: 4px 8px; border-radius: 4px; width: 100%;">
+              </div>
+            `;
+            succEl.style.display = "block";
+          }
+        } else {
+          showToast(`Verification invitation resent to ${name || 'administrator'}`);
+        }
       } catch (err) {
         console.error("Failed to resend verification:", err);
         showToast(err.message || "Failed to resend invitation", "error");
       } finally {
         if (buttonEl) {
           buttonEl.disabled = false;
-          buttonEl.textContent = "Resend Invite";
+          buttonEl.textContent = "Resend & Copy Link";
         }
       }
     },
@@ -3991,6 +4261,579 @@
           buttonEl.textContent = nextStatus === "DISABLED" ? "Disable" : "Enable";
         }
       }
+    },
+
+    async deleteAdmin(id, name, buttonEl) {
+      const confirmDelete = window.confirm(
+        `Are you sure you want to permanently delete administrator "${name || 'User'}"?\n\nThis will remove their profile and credentials from the system. This action cannot be undone.`
+      );
+      if (!confirmDelete) return;
+
+      if (buttonEl) {
+        buttonEl.disabled = true;
+        buttonEl.innerHTML = `<span class="spinner" style="width: 12px; height: 12px; border-width: 2px; margin-right: 4px;"></span> Deleting...`;
+      }
+
+      try {
+        await apiClient.request(`/api/admins/${id}`, {
+          method: "DELETE"
+        });
+        showToast(`Administrator "${name || 'User'}" permanently deleted.`, "success");
+        await this.loadAdmins(false);
+      } catch (err) {
+        console.error("Failed to delete admin:", err);
+        const errMsg = err.status === 409
+          ? "Cannot delete active administrator. The account must be disabled first."
+          : (err.message || "Failed to delete administrator.");
+        showToast(errMsg, "error");
+        if (buttonEl) {
+          buttonEl.disabled = false;
+          buttonEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -1px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>Delete`;
+        }
+      }
+    }
+  };
+
+  // =========================================================================
+  // 10C. ADMINISTRATOR ACCOUNT ACTIVATION & PASSWORD SETUP
+  // =========================================================================
+
+  const ActivationManager = {
+    setupToken: null,
+
+    init() {
+      this.bindEvents();
+      this.checkUrlForToken();
+    },
+
+    bindEvents() {
+      document.getElementById("closeSetupPasswordModal")?.addEventListener("click", () => {
+        this.closeModal();
+      });
+      document.getElementById("btnCloseSetupErrorBtn")?.addEventListener("click", () => {
+        this.closeModal();
+      });
+      document.getElementById("btnGoToLoginAfterSetup")?.addEventListener("click", () => {
+        const verifiedEmail = document.getElementById("setupVerifiedEmail")?.textContent || "";
+        this.closeModal();
+        AuthManager.showLoginScreen();
+        if (verifiedEmail && !verifiedEmail.includes("administrator account")) {
+          const emailInput = document.getElementById("loginEmailInput");
+          if (emailInput) {
+            emailInput.value = verifiedEmail.trim();
+            document.getElementById("loginPasswordInput")?.focus();
+          }
+        }
+      });
+
+      const form = document.getElementById("setupPasswordForm");
+      if (form) {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          this.handleSetPassword();
+        });
+      }
+    },
+
+    closeModal() {
+      const modal = document.getElementById("setupPasswordModal");
+      if (modal) modal.style.display = "none";
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname.replace(/\/verify-email/g, "/") || "/");
+      }
+      if (!AuthManager.currentUser) {
+        AuthManager.showLoginScreen();
+      }
+    },
+
+    checkUrlForToken() {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
+      const isVerifyPath = window.location.pathname.includes("verify-email") || window.location.pathname.includes("set-password");
+
+      if (token || isVerifyPath) {
+        if (token) {
+          this.startVerification(token);
+        } else {
+          this.showError("Missing verification or setup token in the link.");
+        }
+      }
+    },
+
+    async startVerification(token) {
+      AuthManager.hideAppLayout();
+      const loginScreen = document.getElementById("loginScreen");
+      if (loginScreen) loginScreen.style.display = "none";
+
+      const modal = document.getElementById("setupPasswordModal");
+      const loadingEl = document.getElementById("setupPasswordLoading");
+      const errorState = document.getElementById("setupPasswordErrorState");
+      const formEl = document.getElementById("setupPasswordForm");
+      const successState = document.getElementById("setupPasswordSuccessState");
+
+      if (modal) modal.style.display = "flex";
+      if (loadingEl) loadingEl.style.display = "block";
+      if (errorState) errorState.style.display = "none";
+      if (formEl) formEl.style.display = "none";
+      if (successState) successState.style.display = "none";
+
+      try {
+        const res = await apiClient.request(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+        this.setupToken = res.setupToken;
+
+        const emailEl = document.getElementById("setupVerifiedEmail");
+        if (emailEl) emailEl.textContent = res.email || "your administrator account";
+
+        if (loadingEl) loadingEl.style.display = "none";
+        if (formEl) formEl.style.display = "block";
+        document.getElementById("newAdminPasswordInput")?.focus();
+      } catch (err) {
+        console.error("Verification failed:", err);
+        this.showError(err.message || "This verification link is invalid, expired, or has already been used.");
+      }
+    },
+
+    showError(msg) {
+      const modal = document.getElementById("setupPasswordModal");
+      const loadingEl = document.getElementById("setupPasswordLoading");
+      const errorState = document.getElementById("setupPasswordErrorState");
+      const errorMsg = document.getElementById("setupPasswordErrorMsg");
+      const formEl = document.getElementById("setupPasswordForm");
+      const successState = document.getElementById("setupPasswordSuccessState");
+
+      if (modal) modal.style.display = "flex";
+      if (loadingEl) loadingEl.style.display = "none";
+      if (formEl) formEl.style.display = "none";
+      if (successState) successState.style.display = "none";
+      if (errorState) errorState.style.display = "block";
+      if (errorMsg) errorMsg.textContent = msg;
+    },
+
+    async handleSetPassword() {
+      const pwdInput = document.getElementById("newAdminPasswordInput");
+      const confirmInput = document.getElementById("confirmAdminPasswordInput");
+      const submitBtn = document.getElementById("btnSubmitSetPassword");
+      const alertEl = document.getElementById("setupFormAlert");
+
+      if (alertEl) {
+        alertEl.style.display = "none";
+        alertEl.textContent = "";
+      }
+
+      const password = pwdInput?.value || "";
+      const passwordConfirmation = confirmInput?.value || "";
+
+      if (password.length < 12) {
+        if (alertEl) {
+          alertEl.textContent = "Password must be at least 12 characters long.";
+          alertEl.style.display = "block";
+        }
+        return;
+      }
+
+      if (password !== passwordConfirmation) {
+        if (alertEl) {
+          alertEl.textContent = "Passwords do not match.";
+          alertEl.style.display = "block";
+        }
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin-right: 6px;"></span> Activating...`;
+      }
+
+      try {
+        await apiClient.request("/api/auth/set-password", {
+          method: "POST",
+          body: JSON.stringify({
+            token: this.setupToken,
+            password,
+            passwordConfirmation
+          })
+        });
+
+        document.getElementById("setupPasswordForm")?.style.setProperty("display", "none");
+        document.getElementById("setupPasswordSuccessState")?.style.setProperty("display", "block");
+        showToast("Password set successfully! Your account is active.", "success");
+      } catch (err) {
+        console.error("Failed to set password:", err);
+        if (alertEl) {
+          alertEl.textContent = err.message || "Failed to set password. Link may have expired.";
+          alertEl.style.display = "block";
+        }
+        showToast(err.message || "Failed to set password", "error");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Set Password & Activate Account";
+        }
+      }
+    }
+  };
+
+  // =========================================================================
+  // 10C. PROFILE & SETTINGS MANAGERS
+  // =========================================================================
+
+  const ProfileManager = {
+    init() {
+      this.bindEvents();
+    },
+
+    bindEvents() {
+      // Return to dashboard back button & breadcrumb
+      document.getElementById("btnBackFromProfile")?.addEventListener("click", () => {
+        DatabaseScreenManager.closeDatabaseScreen();
+      });
+
+      document.getElementById("breadcrumbDashboardProfile")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        DatabaseScreenManager.closeDatabaseScreen();
+      });
+
+      // Save Profile Info
+      document.getElementById("profileInfoForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById("profileInputName");
+        const emailInput = document.getElementById("profileInputEmail");
+        const deptInput = document.getElementById("profileInputDept");
+
+        const newName = nameInput?.value?.trim() || "Super Admin";
+        const newEmail = emailInput?.value?.trim() || "superadmin@nexus6.internal";
+        const newDept = deptInput?.value?.trim() || "Data Operations";
+
+        if (!AuthManager.currentUser) {
+          AuthManager.currentUser = { id: "admin-root", email: newEmail, name: newName, role: "SUPER_ADMIN" };
+        } else {
+          AuthManager.currentUser.name = newName;
+          AuthManager.currentUser.email = newEmail;
+        }
+
+        const customProfile = { name: newName, email: newEmail, dept: newDept };
+        localStorage.setItem("datavault6_admin_profile", JSON.stringify(customProfile));
+
+        // Update UI
+        AuthManager.updateProfileUI(AuthManager.currentUser);
+        this.loadProfile();
+
+        showToast("Profile details updated successfully");
+      });
+
+      // Change Password Form
+      document.getElementById("profilePasswordForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const newPass = document.getElementById("profileNewPassword")?.value || "";
+        const confirmPass = document.getElementById("profileConfirmPassword")?.value || "";
+        const alertEl = document.getElementById("profilePasswordAlert");
+
+        if (alertEl) {
+          alertEl.style.display = "none";
+          alertEl.textContent = "";
+        }
+
+        if (newPass.length < 12) {
+          if (alertEl) {
+            alertEl.textContent = "New password must be at least 12 characters long according to security policy.";
+            alertEl.style.display = "block";
+          }
+          return;
+        }
+
+        if (newPass !== confirmPass) {
+          if (alertEl) {
+            alertEl.textContent = "New password and password confirmation do not match.";
+            alertEl.style.display = "block";
+          }
+          return;
+        }
+
+        document.getElementById("profilePasswordForm")?.reset();
+        showToast("Password updated successfully with Argon2id encryption");
+      });
+
+      // Sign Out Button
+      document.getElementById("btnProfileSignOut")?.addEventListener("click", async () => {
+        try {
+          await apiClient.request("/api/auth/logout", { method: "POST" });
+        } catch {
+          // ignore
+        }
+        showToast("Signed out of administrative session");
+        setTimeout(() => {
+          window.location.reload();
+        }, 400);
+      });
+
+      // Switch Account Button
+      document.getElementById("btnProfileSwitchAccount")?.addEventListener("click", () => {
+        AuthManager.showLoginModal();
+      });
+    },
+
+    loadProfile() {
+      let saved = null;
+      try {
+        saved = JSON.parse(localStorage.getItem("datavault6_admin_profile") || "null");
+      } catch {
+        saved = null;
+      }
+
+      const user = AuthManager.currentUser || {};
+      const displayName = saved?.name || user.name || (user.email ? user.email.split("@")[0] : "Super Admin");
+      const email = saved?.email || user.email || "superadmin@nexus6.internal";
+      const dept = saved?.dept || "Data Operations";
+      const role = user.role === "SUPER_ADMIN" ? "Super Administrator" : (user.role === "ADMIN" ? "Data Administrator" : "Platform Administrator");
+      const initials = displayName.slice(0, 2).toUpperCase();
+
+      const largeAvatar = document.getElementById("profileLargeAvatar");
+      if (largeAvatar) largeAvatar.textContent = initials;
+
+      const heroName = document.getElementById("profileHeroName");
+      if (heroName) heroName.textContent = displayName;
+
+      const heroRole = document.getElementById("profileHeroRoleBadge");
+      if (heroRole) heroRole.textContent = role;
+
+      const heroEmail = document.getElementById("profileHeroEmail");
+      if (heroEmail) heroEmail.textContent = email;
+
+      const heroDept = document.getElementById("profileHeroDept");
+      if (heroDept) heroDept.textContent = dept;
+
+      const inputName = document.getElementById("profileInputName");
+      if (inputName) inputName.value = displayName;
+
+      const inputEmail = document.getElementById("profileInputEmail");
+      if (inputEmail) inputEmail.value = email;
+
+      const inputDept = document.getElementById("profileInputDept");
+      if (inputDept) inputDept.value = dept;
+
+      const inputRole = document.getElementById("profileInputRole");
+      if (inputRole) inputRole.value = `${role} (Active)`;
+
+      const sessionInfo = document.getElementById("profileSessionInfo");
+      if (sessionInfo) {
+        sessionInfo.textContent = `Active Session \u2022 Account: ${email} \u2022 TLS Encrypted JWT Cookie`;
+      }
+    }
+  };
+
+  const SettingsManager = {
+    defaults: {
+      theme: "light",
+      density: "comfortable",
+      glassmorphism: true,
+      animations: true,
+      toastAlerts: true,
+      requestAlerts: true,
+      securityAlerts: true,
+      defaultEngine: "MySQL",
+      defaultExport: "csv",
+      autoProfile: true
+    },
+
+    settings: {},
+
+    init() {
+      this.loadSettings();
+      this.bindEvents();
+    },
+
+    loadSettings() {
+      let stored = {};
+      try {
+        stored = JSON.parse(localStorage.getItem("datavault6_settings") || "{}");
+      } catch {
+        stored = {};
+      }
+
+      this.settings = { ...this.defaults, ...stored };
+
+      const currentTheme = localStorage.getItem("datavault6_theme") || this.settings.theme;
+      this.settings.theme = currentTheme;
+
+      this.applySettingsToUI();
+    },
+
+    applySettingsToUI() {
+      // 1. Theme buttons
+      const isDark = (document.documentElement.getAttribute("data-theme") === "dark") || this.settings.theme === "dark";
+      document.getElementById("themeOptLight")?.classList.toggle("active", !isDark);
+      document.getElementById("themeOptDark")?.classList.toggle("active", isDark);
+
+      // 2. Density buttons
+      const isCompact = this.settings.density === "compact";
+      document.getElementById("densityOptComfortable")?.classList.toggle("active", !isCompact);
+      document.getElementById("densityOptCompact")?.classList.toggle("active", isCompact);
+      document.getElementById("datasetsTable")?.classList.toggle("table-compact", isCompact);
+
+      // 3. Toggles
+      const toggleGlass = document.getElementById("toggleGlassmorphism");
+      if (toggleGlass) toggleGlass.checked = !!this.settings.glassmorphism;
+
+      const toggleAnim = document.getElementById("toggleAnimations");
+      if (toggleAnim) toggleAnim.checked = !!this.settings.animations;
+
+      const toggleToast = document.getElementById("toggleToastAlerts");
+      if (toggleToast) toggleToast.checked = !!this.settings.toastAlerts;
+
+      const toggleReq = document.getElementById("toggleRequestAlerts");
+      if (toggleReq) toggleReq.checked = !!this.settings.requestAlerts;
+
+      const toggleSec = document.getElementById("toggleSecurityAlerts");
+      if (toggleSec) toggleSec.checked = !!this.settings.securityAlerts;
+
+      const toggleAuto = document.getElementById("toggleAutoProfile");
+      if (toggleAuto) toggleAuto.checked = !!this.settings.autoProfile;
+
+      // 4. Selects
+      const selEngine = document.getElementById("settingDefaultEngine");
+      if (selEngine) selEngine.value = this.settings.defaultEngine || "MySQL";
+
+      const selExport = document.getElementById("settingDefaultExport");
+      if (selExport) selExport.value = this.settings.defaultExport || "csv";
+
+      // 5. Public URL
+      const publicUrlInput = document.getElementById("settingPublicUrlInput");
+      if (publicUrlInput) {
+        if (window.location.origin && !window.location.origin.includes("localhost") && !window.location.origin.includes("127.0.0.1")) {
+          publicUrlInput.value = window.location.origin;
+        } else {
+          publicUrlInput.value = "https://viselike-lushness-repacking.ngrok-free.dev";
+        }
+      }
+
+      this.checkApiHealth();
+    },
+
+    async checkApiHealth() {
+      const statusText = document.getElementById("apiHealthStatusText");
+      if (!statusText) return;
+
+      statusText.textContent = "Pinging /api/health...";
+      statusText.style.color = "var(--text-muted)";
+
+      const startTime = performance.now();
+      try {
+        const res = await apiClient.request("/api/health");
+        const latency = Math.round(performance.now() - startTime);
+        statusText.textContent = `200 OK (${latency}ms) \u2022 Service: ${res.service || "nexus-6-api"} \u2022 Healthy`;
+        statusText.style.color = "#10B981";
+      } catch (err) {
+        statusText.textContent = "Backend Offline or Endpoint Unreachable";
+        statusText.style.color = "#EF4444";
+      }
+    },
+
+    bindEvents() {
+      // Return to dashboard
+      document.getElementById("btnBackFromSettings")?.addEventListener("click", () => {
+        DatabaseScreenManager.closeDatabaseScreen();
+      });
+
+      document.getElementById("breadcrumbDashboardSettings")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        DatabaseScreenManager.closeDatabaseScreen();
+      });
+
+      // Theme toggle buttons
+      document.getElementById("themeOptLight")?.addEventListener("click", () => {
+        document.documentElement.setAttribute("data-theme", "light");
+        localStorage.setItem("datavault6_theme", "light");
+        this.settings.theme = "light";
+        document.getElementById("themeOptLight")?.classList.add("active");
+        document.getElementById("themeOptDark")?.classList.remove("active");
+        showToast("Switched to Light theme");
+      });
+
+      document.getElementById("themeOptDark")?.addEventListener("click", () => {
+        document.documentElement.setAttribute("data-theme", "dark");
+        localStorage.setItem("datavault6_theme", "dark");
+        this.settings.theme = "dark";
+        document.getElementById("themeOptDark")?.classList.add("active");
+        document.getElementById("themeOptLight")?.classList.remove("active");
+        showToast("Switched to Dark theme");
+      });
+
+      // Density buttons
+      document.getElementById("densityOptComfortable")?.addEventListener("click", () => {
+        this.settings.density = "comfortable";
+        document.getElementById("densityOptComfortable")?.classList.add("active");
+        document.getElementById("densityOptCompact")?.classList.remove("active");
+        document.getElementById("datasetsTable")?.classList.remove("table-compact");
+        showToast("Table density set to Comfortable");
+      });
+
+      document.getElementById("densityOptCompact")?.addEventListener("click", () => {
+        this.settings.density = "compact";
+        document.getElementById("densityOptCompact")?.classList.add("active");
+        document.getElementById("densityOptComfortable")?.classList.remove("active");
+        document.getElementById("datasetsTable")?.classList.add("table-compact");
+        showToast("Table density set to Compact");
+      });
+
+      // Copy Public URL
+      document.getElementById("btnCopyPublicUrl")?.addEventListener("click", () => {
+        const input = document.getElementById("settingPublicUrlInput");
+        if (input) {
+          navigator.clipboard?.writeText(input.value).then(() => {
+            showToast("Public URL copied to clipboard!");
+          }).catch(() => {
+            input.select();
+            document.execCommand("copy");
+            showToast("Public URL copied to clipboard!");
+          });
+        }
+      });
+
+      // Ping API Button
+      document.getElementById("btnTestApiHealth")?.addEventListener("click", () => {
+        this.checkApiHealth();
+      });
+
+      // Save All Settings
+      document.getElementById("btnSaveAllSettings")?.addEventListener("click", () => {
+        this.collectSettingsFromUI();
+        localStorage.setItem("datavault6_settings", JSON.stringify(this.settings));
+        showToast("All platform settings saved successfully!");
+      });
+
+      // Reset to defaults
+      document.getElementById("btnResetSettings")?.addEventListener("click", () => {
+        this.settings = { ...this.defaults };
+        localStorage.setItem("datavault6_settings", JSON.stringify(this.settings));
+        this.applySettingsToUI();
+        showToast("Settings reset to default configuration");
+      });
+    },
+
+    collectSettingsFromUI() {
+      const toggleGlass = document.getElementById("toggleGlassmorphism");
+      if (toggleGlass) this.settings.glassmorphism = toggleGlass.checked;
+
+      const toggleAnim = document.getElementById("toggleAnimations");
+      if (toggleAnim) this.settings.animations = toggleAnim.checked;
+
+      const toggleToast = document.getElementById("toggleToastAlerts");
+      if (toggleToast) this.settings.toastAlerts = toggleToast.checked;
+
+      const toggleReq = document.getElementById("toggleRequestAlerts");
+      if (toggleReq) this.settings.requestAlerts = toggleReq.checked;
+
+      const toggleSec = document.getElementById("toggleSecurityAlerts");
+      if (toggleSec) this.settings.securityAlerts = toggleSec.checked;
+
+      const toggleAuto = document.getElementById("toggleAutoProfile");
+      if (toggleAuto) this.settings.autoProfile = toggleAuto.checked;
+
+      const selEngine = document.getElementById("settingDefaultEngine");
+      if (selEngine) this.settings.defaultEngine = selEngine.value;
+
+      const selExport = document.getElementById("settingDefaultExport");
+      if (selExport) this.settings.defaultExport = selExport.value;
     }
   };
 
@@ -4040,6 +4883,10 @@
           DatabaseScreenManager.openAnalytics();
         } else if (label === "Data Requests" || this.id === "nav-requests-tool") {
           DatabaseScreenManager.openDataRequests();
+        } else if (label === "Profile" || this.id === "nav-profile") {
+          DatabaseScreenManager.openProfile();
+        } else if (label === "Settings" || this.id === "nav-settings") {
+          DatabaseScreenManager.openSettings();
         } else if (label === "Activity Feed" || this.id === "nav-activity-feed") {
           document.getElementById("activityLogsModal")?.style.setProperty("display", "flex");
           ActivityLogsManager.loadFullLogs();
@@ -4107,6 +4954,19 @@
       DatasetsManager.loadDatasets();
       showToast("Reset filters to show all datasets");
     });
+
+    // Top Profile Menu Actions
+    document.getElementById("btnMenuProfile")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.getElementById("profileDropdownMenu")?.classList.remove("active");
+      DatabaseScreenManager.openProfile();
+    });
+
+    document.getElementById("btnMenuSettings")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.getElementById("profileDropdownMenu")?.classList.remove("active");
+      DatabaseScreenManager.openSettings();
+    });
   }
 
   function initThemeToggle() {
@@ -4139,17 +4999,16 @@
     DatabaseScreenManager.init();
     AnalyticsScreenManager.init();
     DataRequestsManager.init();
+    ProfileManager.init();
+    SettingsManager.init();
     initNavigation();
     UploadManager.init();
     ActionsManager.init();
-    ActivityLogsManager.init();
-    NotificationsManager.init();
     AdminManager.init();
+    ActivationManager.init();
 
-    // Authenticate first, then load data
+    // Authenticate first; data managers are triggered by showAppLayout() once authenticated
     await AuthManager.init();
-    await DashboardManager.init();
-    await DatasetsManager.init();
 
     console.log("DataVault6 frontend fully integrated with real REST backend APIs.");
   });

@@ -5,10 +5,21 @@ import type { Express } from "express";
 import { env } from "./env.js";
 
 export function configureHttp(app: Express): void {
-  app.use(helmet());
+  app.set("trust proxy", 1);
+  const allowedOrigins = [env.WEB_ORIGIN, env.APP_BASE_URL]
+    .filter((v): v is string => Boolean(v))
+    .map((v) => v.replace(/\/+$/, ""));
+
   app.use(
     cors({
-      origin: env.WEB_ORIGIN,
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const normalized = origin.replace(/\/+$/, "");
+        if (allowedOrigins.includes(normalized) || allowedOrigins.includes("*")) {
+          return callback(null, true);
+        }
+        return callback(null, false);
+      },
       credentials: true
     })
   );

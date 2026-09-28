@@ -6,7 +6,8 @@ import type { DatasetDatabaseConfig } from "./dataset-databases.js";
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   API_PORT: z.coerce.number().int().positive().default(4000),
-  WEB_ORIGIN: z.string().url().default("http://localhost:8080")
+  WEB_ORIGIN: z.string().url().default("http://localhost:8080"),
+  APP_BASE_URL: z.preprocess((val) => typeof val === "string" && val.trim() === "" ? undefined : val, z.string().url().optional())
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

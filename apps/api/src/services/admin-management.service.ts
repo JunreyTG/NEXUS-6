@@ -50,6 +50,7 @@ function safeAdmin(admin: Record<string, unknown>) {
     id: admin.id,
     name: admin.name,
     email: admin.email,
+    role: "ADMIN",
     emailVerified: admin.emailVerified,
     status: admin.status,
     lastLoginAt: admin.lastLoginAt,
@@ -69,9 +70,12 @@ export class AdminManagementService {
     const email = normalizeEmail(input.email);
     if (await this.dependencies.admins.findByEmail(email)) throw new ConflictError("EMAIL_ALREADY_EXISTS");
     const admin = await this.dependencies.admins.createPending({ name: input.name.trim(), email });
-    await this.sendVerification(admin.id, admin.email, admin.name);
+    const { verificationUrl } = await this.sendVerification(admin.id, admin.email, admin.name);
     await this.audit({ ...actor, action: "ADMIN_CREATED", resourceType: "ADMIN", resourceId: admin.id, success: true });
-    return safeAdmin(admin as unknown as Record<string, unknown>);
+    return {
+      ...safeAdmin(admin as unknown as Record<string, unknown>),
+      verificationUrl
+    };
   }
 
   async listAdmins(actor: LogActor = { actorType: "SYSTEM" }) {
@@ -117,9 +121,29 @@ export class AdminManagementService {
   async updateStatus(id: string, status: AdminStatus, actor: LogActor = { actorType: "SYSTEM" }) {
     const existing = await this.dependencies.admins.findById(id);
     if (!existing) throw new NotFoundError("ADMIN_NOT_FOUND");
+    if (status === "ACTIVE" && (!existing.emailVerified || !existing.passwordHash)) {
+      throw new ConflictError("CANNOT_ACTIVATE_UNVERIFIED_ADMIN");
+    }
     const updated = await this.dependencies.admins.updateStatus(id, status);
     await this.audit({ ...actor, action: "ADMIN_STATUS_CHANGED", resourceType: "ADMIN", resourceId: id, success: true, metadata: { previousStatus: existing.status, status } });
     return safeAdmin(updated as unknown as Record<string, unknown>);
+  }
+
+  async deleteAdmin(id: string, actor: LogActor = { actorType: "SYSTEM" }) {
+    const existing = await this.dependencies.admins.findById(id);
+    if (!existing) throw new NotFoundError("ADMIN_NOT_FOUND");
+    if (existing.status !== "DISABLED") {
+      throw new ConflictError("CANNOT_DELETE_ACTIVE_ADMIN");
+    }
+    await this.dependencies.admins.delete(id);
+    await this.audit({
+      ...actor,
+      action: "ADMIN_DELETED",
+      resourceType: "ADMIN",
+      resourceId: id,
+      success: true,
+      metadata: { email: existing.email, name: existing.name }
+    });
   }
 
   async resendVerification(id: string, actor: LogActor = { actorType: "SYSTEM" }) {
@@ -127,9 +151,9 @@ export class AdminManagementService {
     if (!admin) throw new NotFoundError("ADMIN_NOT_FOUND");
     if (admin.emailVerified) throw new ConflictError("EMAIL_ALREADY_VERIFIED");
     await this.dependencies.tokens.invalidateVerifications(id, this.dependencies.now());
-    await this.sendVerification(admin.id, admin.email, admin.name);
+    const { verificationUrl } = await this.sendVerification(admin.id, admin.email, admin.name);
     await this.audit({ ...actor, action: "VERIFICATION_RESENT", resourceType: "ADMIN", resourceId: id, success: true });
-    return { status: "verification_sent" as const };
+    return { status: "verification_sent" as const, verificationUrl };
   }
 
   async verifyEmail(token: string) {
@@ -172,13 +196,20 @@ export class AdminManagementService {
     }
   }
 
-  private async sendVerification(id: string, email: string, name: string): Promise<void> {
+  private async sendVerification(id: string, email: string, name: string): Promise<{ verificationUrl: string }> {
     const config = this.dependencies.emailConfig();
     const token = this.dependencies.createToken();
     const expiresAt = new Date(this.dependencies.now().getTime() + config.VERIFICATION_TOKEN_EXPIRES_HOURS * 60 * 60 * 1000);
     await this.dependencies.tokens.createVerification(id, hashRefreshToken(token), expiresAt);
-    const verificationUrl = `${config.webOrigin}/verify-email?token=${encodeURIComponent(token)}`;
-    await this.dependencies.emailProvider().sendVerificationEmail({ to: email, name, verificationUrl });
+    const baseUrl = (config.appBaseUrl || config.webOrigin || "").replace(/\/+$/, "");
+    const verificationUrl = `${baseUrl}/verify-email?token=${encodeURIComponent(token)}`;
+    console.info(`[Admin Verification] Token created for ${email}. Verification Link: ${verificationUrl}`);
+    try {
+      await this.dependencies.emailProvider().sendVerificationEmail({ to: email, name, verificationUrl });
+    } catch (error) {
+      console.warn(`[Verification Email Warning] Outbound delivery failed for ${email} (verification link still valid):`, error);
+    }
+    return { verificationUrl };
   }
 }
 

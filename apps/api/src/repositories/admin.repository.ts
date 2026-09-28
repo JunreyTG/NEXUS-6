@@ -66,4 +66,22 @@ export class AdminRepository {
       data: { passwordHash, status: "ACTIVE" }
     }));
   }
+
+  delete(id: string) {
+    return databaseWriteOperation(async () => {
+      const db = this.database() as any;
+      if (typeof db.$transaction === "function") {
+        return db.$transaction(async (tx: any) => {
+          if (tx.adminSession) await tx.adminSession.deleteMany({ where: { adminId: id } });
+          if (tx.emailVerificationToken) await tx.emailVerificationToken.deleteMany({ where: { adminId: id } });
+          if (tx.passwordResetToken) await tx.passwordResetToken.deleteMany({ where: { adminId: id } });
+          if (tx.adminPasswordSetupToken) await tx.adminPasswordSetupToken.deleteMany({ where: { adminId: id } });
+          if (tx.report) await tx.report.deleteMany({ where: { ownerAdminId: id } });
+          if (tx.dataset) await tx.dataset.updateMany({ where: { ownerAdminId: id }, data: { ownerAdminId: null } });
+          return tx.admin.delete({ where: { id } });
+        });
+      }
+      return db.admin.delete({ where: { id } });
+    });
+  }
 }

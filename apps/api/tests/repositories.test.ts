@@ -52,4 +52,11 @@ describe("system repositories", () => {
     const repository = new DatasetRepository(() => { throw new Error("sensitive URL"); });
     await expect(repository.listByOwner("id")).rejects.toThrow("System database unavailable.");
   });
+  it("deletes admin records through repository", async () => {
+    const mock = mockDatabase();
+    (mock.admin as any).delete = vi.fn().mockResolvedValue({ id: "admin-id" });
+    const repository = new AdminRepository(mock.provider);
+    await repository.delete("admin-id");
+    expect((mock.admin as any).delete).toHaveBeenCalledWith({ where: { id: "admin-id" } });
+  });
 });

@@ -79,6 +79,15 @@ export function createAdminRouter(service = new AdminManagementService(), authen
     }
   });
 
+  router.delete("/:id", async (request, response, next) => {
+    try {
+      await service.deleteAdmin(idSchema.parse(request.params.id), requestActor(request));
+      response.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }
 
