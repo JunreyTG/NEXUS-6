@@ -8,6 +8,7 @@ import { issueAccessToken } from "./tokens.js";
 import type { AuthenticatedPrincipal, SafeUser } from "./types.js";
 import { LogService } from "../logging/log.service.js";
 import type { ActivityLogger } from "../logging/types.js";
+import { firebaseUserService, type FirebaseUserService } from "../firebase/firebase-user.service.js";
 
 const INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
 
@@ -36,6 +37,7 @@ type AuthServiceDependencies = {
   createToken: () => string;
   now: () => Date;
   logger: ActivityLogger;
+  firebase?: FirebaseUserService;
 };
 
 function defaultDependencies(): AuthServiceDependencies {
@@ -46,7 +48,8 @@ function defaultDependencies(): AuthServiceDependencies {
     verifyPassword: (hash, password) => argon2.verify(hash, password).catch(() => false),
     createToken: createRefreshToken,
     now: () => new Date(),
-    logger: new LogService()
+    logger: new LogService(),
+    firebase: firebaseUserService
   };
 }
 
@@ -118,7 +121,15 @@ export class AuthService {
       }));
       invalidCredentials();
     }
-    if (!(await this.dependencies.verifyPassword(admin.passwordHash, input.password))) {
+    let passwordValid = await this.dependencies.verifyPassword(admin.passwordHash, input.password);
+    if (!passwordValid && this.dependencies.firebase?.isConfigured) {
+      const fbCheck = await this.dependencies.firebase.verifyFirebasePassword(email, input.password);
+      if (fbCheck.success) {
+        passwordValid = true;
+      }
+    }
+
+    if (!passwordValid) {
       await safeLog(() => this.dependencies.logger.recordLogin({ actorType: "ADMIN", actorId: admin.id, actorEmail: email, ...metadata, action: "LOGIN", success: false, errorCode: INVALID_CREDENTIALS }));
       invalidCredentials();
     }

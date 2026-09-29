@@ -8,6 +8,7 @@ import { requireEmailConfig, type EmailConfig } from "../email/config.js";
 import type { EmailProvider } from "../email/provider.js";
 import { LogService } from "../logging/log.service.js";
 import type { ActivityLogger, LogActor } from "../logging/types.js";
+import { firebaseUserService, type FirebaseUserService } from "../firebase/firebase-user.service.js";
 
 export type AdminProfileInput = {
   name: string;
@@ -30,6 +31,7 @@ type AdminManagementDependencies = {
   now: () => Date;
   hashPassword: (password: string) => Promise<string>;
   logger: ActivityLogger;
+  firebase?: FirebaseUserService;
 };
 
 function defaultDependencies(): AdminManagementDependencies {
@@ -41,7 +43,8 @@ function defaultDependencies(): AdminManagementDependencies {
     createToken: createRefreshToken,
     now: () => new Date(),
     hashPassword: (password) => argon2.hash(password, { type: argon2.argon2id }),
-    logger: new LogService()
+    logger: new LogService(),
+    firebase: firebaseUserService
   };
 }
 
@@ -71,6 +74,15 @@ export class AdminManagementService {
     if (await this.dependencies.admins.findByEmail(email)) throw new ConflictError("EMAIL_ALREADY_EXISTS");
     const admin = await this.dependencies.admins.createPending({ name: input.name.trim(), email });
     const { verificationUrl } = await this.sendVerification(admin.id, admin.email, admin.name);
+    void this.dependencies.firebase?.syncUserToFirestore({
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      role: "ADMIN",
+      status: admin.status,
+      emailVerified: admin.emailVerified
+    });
+    void this.dependencies.firebase?.sendFirebasePasswordResetEmail(admin.email);
     await this.audit({ ...actor, action: "ADMIN_CREATED", resourceType: "ADMIN", resourceId: admin.id, success: true });
     return {
       ...safeAdmin(admin as unknown as Record<string, unknown>),
@@ -114,6 +126,14 @@ export class AdminManagementService {
       await this.dependencies.tokens.invalidateSetups(id, now);
       await this.sendVerification(updated.id, updated.email, updated.name);
     }
+    void this.dependencies.firebase?.syncUserToFirestore({
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      role: "ADMIN",
+      status: updated.status,
+      emailVerified: updated.emailVerified
+    });
     await this.audit({ ...actor, action: "ADMIN_UPDATED", resourceType: "ADMIN", resourceId: id, success: true, metadata: { emailChanged } });
     return safeAdmin(updated as unknown as Record<string, unknown>);
   }
@@ -125,6 +145,14 @@ export class AdminManagementService {
       throw new ConflictError("CANNOT_ACTIVATE_UNVERIFIED_ADMIN");
     }
     const updated = await this.dependencies.admins.updateStatus(id, status);
+    void this.dependencies.firebase?.syncUserToFirestore({
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      role: "ADMIN",
+      status: updated.status,
+      emailVerified: updated.emailVerified
+    });
     await this.audit({ ...actor, action: "ADMIN_STATUS_CHANGED", resourceType: "ADMIN", resourceId: id, success: true, metadata: { previousStatus: existing.status, status } });
     return safeAdmin(updated as unknown as Record<string, unknown>);
   }
@@ -136,6 +164,7 @@ export class AdminManagementService {
       throw new ConflictError("CANNOT_DELETE_ACTIVE_ADMIN");
     }
     await this.dependencies.admins.delete(id);
+    void this.dependencies.firebase?.deleteUserFromFirestore(id);
     await this.audit({
       ...actor,
       action: "ADMIN_DELETED",
@@ -152,6 +181,7 @@ export class AdminManagementService {
     if (admin.emailVerified) throw new ConflictError("EMAIL_ALREADY_VERIFIED");
     await this.dependencies.tokens.invalidateVerifications(id, this.dependencies.now());
     const { verificationUrl } = await this.sendVerification(admin.id, admin.email, admin.name);
+    void this.dependencies.firebase?.sendFirebasePasswordResetEmail(admin.email);
     await this.audit({ ...actor, action: "VERIFICATION_RESENT", resourceType: "ADMIN", resourceId: id, success: true });
     return { status: "verification_sent" as const, verificationUrl };
   }
@@ -168,6 +198,14 @@ export class AdminManagementService {
     const config = this.dependencies.emailConfig();
     const expiresAt = new Date(now.getTime() + config.PASSWORD_SETUP_TOKEN_EXPIRES_MINUTES * 60 * 1000);
     await this.dependencies.tokens.createSetup(record.adminId, hashRefreshToken(setupToken), expiresAt);
+    void this.dependencies.firebase?.syncUserToFirestore({
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      role: "ADMIN",
+      status: admin.status,
+      emailVerified: admin.emailVerified
+    });
     await this.audit({ actorType: "ADMIN", actorId: record.adminId, actorEmail: admin.email, action: "EMAIL_VERIFIED", resourceType: "ADMIN", resourceId: record.adminId, success: true });
     return { email: admin.email, setupToken };
   }
@@ -184,8 +222,33 @@ export class AdminManagementService {
     const admin = await this.dependencies.admins.setPassword(record.adminId, passwordHash);
     await this.dependencies.tokens.invalidateSetups(record.adminId, now);
     await this.dependencies.tokens.invalidateVerifications(record.adminId, now);
+    void this.dependencies.firebase?.syncUserToFirestore({
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      role: "ADMIN",
+      status: admin.status,
+      emailVerified: admin.emailVerified
+    });
     await this.audit({ actorType: "ADMIN", actorId: record.adminId, actorEmail: admin.email, action: "PASSWORD_SETUP", resourceType: "ADMIN", resourceId: record.adminId, success: true });
     return safeAdmin(admin as unknown as Record<string, unknown>);
+  }
+
+  async syncAllToFirebase() {
+    const list = await this.dependencies.admins.list();
+    const results = await Promise.all(
+      list.map((admin) =>
+        this.dependencies.firebase?.syncUserToFirestore({
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          role: "ADMIN",
+          status: admin.status,
+          emailVerified: admin.emailVerified
+        })
+      )
+    );
+    return { synced: results.filter(Boolean).length, total: list.length };
   }
 
   private async audit(input: Parameters<ActivityLogger["recordAudit"]>[0]): Promise<void> {

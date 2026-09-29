@@ -79,6 +79,14 @@ export function createAdminRouter(service = new AdminManagementService(), authen
     }
   });
 
+  router.post("/sync-firebase", async (_request, response, next) => {
+    try {
+      response.status(200).json(await service.syncAllToFirebase());
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.delete("/:id", async (request, response, next) => {
     try {
       await service.deleteAdmin(idSchema.parse(request.params.id), requestActor(request));

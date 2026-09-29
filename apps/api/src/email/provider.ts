@@ -150,10 +150,11 @@ export class BrevoEmailProvider implements EmailProvider {
       if (payload.headers) body.headers = payload.headers;
       if (payload.tags) body.tags = payload.tags;
 
+      const apiKey = unwrapApiKey(this.config.BREVO_API_KEY);
       const response = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
         headers: {
-          "api-key": this.config.BREVO_API_KEY!,
+          "api-key": apiKey!,
           "Content-Type": "application/json",
           Accept: "application/json"
         },
@@ -196,4 +197,16 @@ function escapeHtml(value: string): string {
     "'": "&#39;",
     '"': "&quot;"
   })[character] ?? character);
+}
+
+function unwrapApiKey(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("ey")) {
+    try {
+      const parsed = JSON.parse(Buffer.from(trimmed, "base64").toString("utf8"));
+      if (parsed && typeof parsed.api_key === "string") return parsed.api_key;
+    } catch {}
+  }
+  return trimmed;
 }

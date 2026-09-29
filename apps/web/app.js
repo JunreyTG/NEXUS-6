@@ -3842,6 +3842,29 @@
         this.loadAdmins(true);
       });
 
+      // Sync to Firebase button
+      document.getElementById("btnSyncFirebaseAdmins")?.addEventListener("click", async () => {
+        const btn = document.getElementById("btnSyncFirebaseAdmins");
+        if (!btn) return;
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner" style="width:12px;height:12px;margin-right:4px;"></span> Syncing...`;
+        try {
+          const res = await apiClient.request("/api/admins/sync-firebase", { method: "POST" });
+          if (res?.success) {
+            showToast(`Firebase synced: ${res.synced} users updated in Cloud Firestore`, "success");
+          } else {
+            showToast(res?.message || "Firebase synchronization completed", "info");
+          }
+        } catch (err) {
+          console.error("Firebase sync error:", err);
+          showToast(`Firebase sync failed: ${err.message}`, "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
+      });
+
       // Copy invite link modal events
       document.getElementById("btnModalCopyLink")?.addEventListener("click", () => {
         const input = document.getElementById("copyInviteUrlInput");

@@ -429,7 +429,9 @@ export class DatasetService {
     const isSuper = actor.role === "SUPER_ADMIN";
     const accessFilter = isSuper ? undefined : { allowedOwnerAdminId: actor.actorId!, allowPublic: true };
 
-    const resolvedLog = this.logger instanceof LogService ? this.logger : new LogService();
+    const resolvedLog = (this.logger && typeof (this.logger as any).getActivityTimeline === "function")
+      ? (this.logger as any)
+      : (this.logger instanceof LogService ? this.logger : new LogService());
 
     const [categoryStats, contributorStats, downloadCount, timeline] = await Promise.all([
       this.datasets.getCategoryStatistics(accessFilter),

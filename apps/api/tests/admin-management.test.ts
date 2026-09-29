@@ -35,6 +35,7 @@ function createFixture(emailConfigOverrides: Partial<EmailConfig> = {}) {
   const config: EmailConfig = {
     EMAIL_PROVIDER: "console",
     EMAIL_FROM: "NEXUS-6 <noreply@example.test>",
+    BREVO_SMTP_PORT: 587,
     VERIFICATION_TOKEN_EXPIRES_HOURS: 24,
     PASSWORD_SETUP_TOKEN_EXPIRES_MINUTES: 30,
     webOrigin: "http://localhost:8080",
