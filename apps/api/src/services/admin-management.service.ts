@@ -83,7 +83,14 @@ export class AdminManagementService {
       emailVerified: admin.emailVerified
     });
     void this.dependencies.firebase?.sendFirebasePasswordResetEmail(admin.email);
-    await this.audit({ ...actor, action: "ADMIN_CREATED", resourceType: "ADMIN", resourceId: admin.id, success: true });
+    await this.audit({
+      ...actor,
+      action: "ADMIN_CREATED",
+      resourceType: "ADMIN",
+      resourceId: admin.id,
+      success: true,
+      metadata: { adminName: admin.name, adminEmail: admin.email, status: admin.status }
+    });
     return {
       ...safeAdmin(admin as unknown as Record<string, unknown>),
       verificationUrl
@@ -134,7 +141,14 @@ export class AdminManagementService {
       status: updated.status,
       emailVerified: updated.emailVerified
     });
-    await this.audit({ ...actor, action: "ADMIN_UPDATED", resourceType: "ADMIN", resourceId: id, success: true, metadata: { emailChanged } });
+    await this.audit({
+      ...actor,
+      action: "ADMIN_UPDATED",
+      resourceType: "ADMIN",
+      resourceId: id,
+      success: true,
+      metadata: { adminName: updated.name, adminEmail: updated.email, emailChanged }
+    });
     return safeAdmin(updated as unknown as Record<string, unknown>);
   }
 
@@ -158,7 +172,14 @@ export class AdminManagementService {
       status: updated.status,
       emailVerified: updated.emailVerified
     });
-    await this.audit({ ...actor, action: "ADMIN_STATUS_CHANGED", resourceType: "ADMIN", resourceId: id, success: true, metadata: { previousStatus: existing.status, status } });
+    await this.audit({
+      ...actor,
+      action: "ADMIN_STATUS_CHANGED",
+      resourceType: "ADMIN",
+      resourceId: id,
+      success: true,
+      metadata: { adminName: updated.name, adminEmail: updated.email, previousStatus: existing.status, status }
+    });
     return safeAdmin(updated as unknown as Record<string, unknown>);
   }
 
@@ -203,7 +224,7 @@ export class AdminManagementService {
       resourceType: "ADMIN",
       resourceId: id,
       success: true,
-      metadata: { previousStatus: existing.status, status: "ACTIVE", manuallyActivated: true }
+      metadata: { adminName: admin.name, adminEmail: admin.email, previousStatus: existing.status, status: "ACTIVE", manuallyActivated: true }
     });
 
     return {
@@ -226,7 +247,7 @@ export class AdminManagementService {
       resourceType: "ADMIN",
       resourceId: id,
       success: true,
-      metadata: { email: existing.email, name: existing.name }
+      metadata: { adminName: existing.name, adminEmail: existing.email, email: existing.email, name: existing.name }
     });
   }
 
@@ -237,7 +258,14 @@ export class AdminManagementService {
     await this.dependencies.tokens.invalidateVerifications(id, this.dependencies.now());
     const { verificationUrl } = await this.sendVerification(admin.id, admin.email, admin.name);
     void this.dependencies.firebase?.sendFirebasePasswordResetEmail(admin.email);
-    await this.audit({ ...actor, action: "VERIFICATION_RESENT", resourceType: "ADMIN", resourceId: id, success: true });
+    await this.audit({
+      ...actor,
+      action: "VERIFICATION_RESENT",
+      resourceType: "ADMIN",
+      resourceId: id,
+      success: true,
+      metadata: { adminName: admin.name, adminEmail: admin.email }
+    });
     return { status: "verification_sent" as const, verificationUrl };
   }
 
@@ -261,7 +289,16 @@ export class AdminManagementService {
       status: admin.status,
       emailVerified: admin.emailVerified
     });
-    await this.audit({ actorType: "ADMIN", actorId: record.adminId, actorEmail: admin.email, action: "EMAIL_VERIFIED", resourceType: "ADMIN", resourceId: record.adminId, success: true });
+    await this.audit({
+      actorType: "ADMIN",
+      actorId: record.adminId,
+      actorEmail: admin.email,
+      action: "EMAIL_VERIFIED",
+      resourceType: "ADMIN",
+      resourceId: record.adminId,
+      success: true,
+      metadata: { adminName: admin.name, adminEmail: admin.email }
+    });
     return { email: admin.email, setupToken };
   }
 
@@ -285,7 +322,16 @@ export class AdminManagementService {
       status: admin.status,
       emailVerified: admin.emailVerified
     });
-    await this.audit({ actorType: "ADMIN", actorId: record.adminId, actorEmail: admin.email, action: "PASSWORD_SETUP", resourceType: "ADMIN", resourceId: record.adminId, success: true });
+    await this.audit({
+      actorType: "ADMIN",
+      actorId: record.adminId,
+      actorEmail: admin.email,
+      action: "PASSWORD_SETUP",
+      resourceType: "ADMIN",
+      resourceId: record.adminId,
+      success: true,
+      metadata: { adminName: admin.name, adminEmail: admin.email }
+    });
     return safeAdmin(admin as unknown as Record<string, unknown>);
   }
 

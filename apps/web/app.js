@@ -194,9 +194,16 @@
   const AuthManager = {
     currentUser: null,
     dashboardLoaded: false,
+    greetingTimer: null,
 
     async init() {
       this.bindEvents();
+      this.updateGreeting(this.currentUser);
+      if (!this.greetingTimer) {
+        this.greetingTimer = setInterval(() => {
+          this.updateGreeting(this.currentUser);
+        }, 30000);
+      }
       const params = new URLSearchParams(window.location.search);
       const hasVerifyToken = params.has("token") || window.location.pathname.includes("verify-email");
 
@@ -215,17 +222,54 @@
       }
     },
 
+    getDisplayName(user) {
+      if (!user) return "User";
+      if (user.name && String(user.name).trim()) {
+        return String(user.name).trim();
+      }
+      if (user.role === "SUPER_ADMIN") {
+        return "Super Admin";
+      }
+      if (user.email) {
+        const local = String(user.email).split("@")[0] || "Admin";
+        return local.charAt(0).toUpperCase() + local.slice(1);
+      }
+      return "Admin";
+    },
+
+    getTimeOfDayGreeting() {
+      const hour = new Date().getHours();
+      if (hour < 12) return "Good morning";
+      if (hour < 18) return "Good afternoon";
+      return "Good evening";
+    },
+
+    updateGreeting(user = this.currentUser) {
+      const greetingEl = document.getElementById("heroGreeting") || document.querySelector(".hero-greeting");
+      if (!greetingEl) return;
+      const timeGreeting = this.getTimeOfDayGreeting();
+      const displayName = this.getDisplayName(user);
+      greetingEl.textContent = `${timeGreeting}, ${displayName}!`;
+    },
+
     setUser(user) {
       this.currentUser = user;
       apiClient.setUser(user);
       this.updateProfileUI(user);
+      this.updateGreeting(user);
     },
 
     updateProfileUI(user) {
       if (!user) return;
-      const displayName = user.name || (user.email ? user.email.split("@")[0] : "Admin");
+      const displayName = this.getDisplayName(user);
       const roleName = user.role === "SUPER_ADMIN" ? "Super Administrator" : "Data Administrator";
-      const initials = displayName.slice(0, 2).toUpperCase();
+      const initials = displayName
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(part => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || displayName.slice(0, 2).toUpperCase();
 
       const nameEl = document.getElementById("userDisplayName");
       const roleEl = document.getElementById("userDisplayRole");
@@ -245,6 +289,8 @@
       const appLayout = document.getElementById("appLayout");
       if (loginScreen) loginScreen.style.display = "none";
       if (appLayout) appLayout.style.display = "flex";
+
+      this.updateGreeting(this.currentUser);
 
       // Load data only after authentication
       if (!this.dashboardLoaded) {
@@ -376,10 +422,18 @@
 
             if (result.accessToken) {
               apiClient.setToken(result.accessToken);
-              const userProfile = result.user || { email, role: "ADMIN" };
+              let userProfile = result.user || { email, role: "ADMIN" };
+              if (!userProfile.name) {
+                try {
+                  const meProfile = await apiClient.request("/api/auth/me");
+                  if (meProfile) userProfile = { ...userProfile, ...meProfile };
+                } catch {
+                  // fallback to result.user
+                }
+              }
               this.setUser(userProfile);
               this.showAppLayout();
-              showToast(`Signed in successfully as ${userProfile.name || userProfile.email}!`);
+              showToast(`Signed in successfully as ${this.getDisplayName(userProfile)}!`);
             }
           } catch (err) {
             if (errorMsg) {
@@ -420,14 +474,23 @@
       }
     },
 
+    formatBytes(bytes) {
+      const n = Number(bytes || 0);
+      if (!n || n <= 0) return "0 B";
+      const units = ["B", "KB", "MB", "GB", "TB"];
+      const i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), units.length - 1);
+      const val = n / Math.pow(1024, i);
+      return `${i === 0 ? Math.round(val) : Number(val.toFixed(1))} ${units[i]}`;
+    },
+
     async loadStats() {
       try {
         const stats = await apiClient.request(`/api/dashboard/stats?days=${this.currentDays}`);
         this.stats = stats;
         this.renderKPIs(stats.kpis);
         this.renderActivityChart(stats.timeline || []);
-        this.renderDonutChart(stats.databaseEngines || {}, stats.kpis?.totalDatasets || 0);
-        this.renderDatabaseCards(stats.databaseEngines || {});
+        this.renderDonutChart(stats.databaseEngines || {}, stats.kpis?.totalDatasets || 0, stats.databaseStorage || {});
+        this.renderDatabaseCards(stats.databaseEngines || {}, stats.databaseStorage || {});
       } catch (err) {
         console.error("Failed to load dashboard stats:", err);
       }
@@ -573,7 +636,7 @@
       });
     },
 
-    renderDonutChart(engines, total) {
+    renderDonutChart(engines, total, storage = {}) {
       const enginesConfig = [
         { key: "MySQL", color: "#2563EB", class: "dot-db01" },
         { key: "SQLServer", color: "#10B981", class: "dot-db02" },
@@ -592,6 +655,8 @@
 
       enginesConfig.forEach(cfg => {
         const count = Number(engines[cfg.key] || 0);
+        const storageInfo = storage[cfg.key];
+        const formattedSize = storageInfo?.formatted || (storageInfo?.bytes !== undefined ? this.formatBytes(storageInfo.bytes) : "0 B");
         const percentage = safeTotal > 0 ? (count / safeTotal) : (1 / 6);
         const pctFormatted = safeTotal > 0 ? Math.round(percentage * 100) : 0;
         const segmentLength = percentage * circumference;
@@ -601,16 +666,16 @@
           <circle cx="80" cy="80" r="54" fill="none" stroke="${cfg.color}" stroke-width="24"
             stroke-dasharray="${segmentLength.toFixed(1)} ${gapLength.toFixed(1)}"
             stroke-dashoffset="${(-accumulatedOffset).toFixed(1)}"
-            class="donut-segment" data-db="${cfg.key}" data-count="${count} (${pctFormatted}%)"
+            class="donut-segment" data-db="${cfg.key}" data-count="${count} (${pctFormatted}%) &bull; ${formattedSize}"
             style="cursor: pointer; transition: stroke-width 0.15s ease;"
           />
         `;
 
         legendHtml += `
-          <div class="legend-row" data-db="${cfg.key}" style="cursor: pointer;">
+          <div class="legend-row" data-db="${cfg.key}" data-count="${count} (${pctFormatted}%) &bull; ${formattedSize}" style="cursor: pointer;">
             <span class="legend-dot ${cfg.class}"></span>
             <span class="legend-name">${cfg.key}</span>
-            <span class="legend-stat">${count} (${pctFormatted}%)</span>
+            <span class="legend-stat">${count} (${pctFormatted}%) &bull; ${formattedSize}</span>
           </div>
         `;
 
@@ -645,7 +710,7 @@
           const db = this.dataset.db;
           const count = this.dataset.count || (engines[db] || 0);
           if (tooltip) {
-            tooltip.innerHTML = `<strong>${db}</strong>: ${count} datasets &bull; Click to open screen`;
+            tooltip.innerHTML = `<strong>${db}</strong>: ${count} &bull; Click to open screen`;
             tooltip.style.display = "block";
             tooltip.style.left = "45%";
             tooltip.style.top = "40%";
@@ -663,14 +728,21 @@
       });
     },
 
-    renderDatabaseCards(engines) {
+    renderDatabaseCards(engines, storage = {}) {
       document.querySelectorAll(".db-card").forEach(card => {
         const dbName = card.dataset.dbName;
-        if (dbName && engines[dbName] !== undefined) {
-          const countEl = card.querySelector(".db-card-count");
-          if (countEl) {
-            countEl.textContent = `${engines[dbName]} datasets`;
-          }
+        if (!dbName) return;
+        const count = Number(engines[dbName] ?? 0);
+        const countEl = card.querySelector(".db-card-count");
+        if (countEl) {
+          countEl.textContent = `${count} ${count === 1 ? "dataset" : "datasets"}`;
+        }
+        const sizeEl = card.querySelector(".db-card-size");
+        if (sizeEl) {
+          const storageInfo = storage[dbName];
+          const formattedSize = storageInfo?.formatted
+            || (storageInfo?.bytes !== undefined ? this.formatBytes(storageInfo.bytes) : "0 B");
+          sizeEl.textContent = formattedSize;
         }
       });
     }
@@ -1033,8 +1105,10 @@
         const tabCount = document.getElementById("dbTabDatasetsCount");
         const countPill = document.getElementById("dbHeroDatasetCountText");
         if (DatabaseScreenManager.activeMode === "database") {
+          const activeDb = DatabaseScreenManager.activeDb || DatabaseScreenManager.activeDatabase;
+          const storageFormatted = (activeDb && DashboardManager.stats?.databaseStorage?.[activeDb]?.formatted) || "0 B";
           if (tabCount) tabCount.textContent = String(this.totalCount);
-          if (countPill) countPill.textContent = `${this.totalCount} Datasets Stored`;
+          if (countPill) countPill.textContent = `${this.totalCount} Datasets Stored \u2022 ${storageFormatted}`;
         } else if (DatabaseScreenManager.activeMode === "explore") {
           if (tabCount) tabCount.textContent = String(this.totalCount);
           if (countPill) countPill.textContent = `${this.totalCount} Public Datasets`;
@@ -1713,13 +1787,108 @@
       }
     },
 
+    formatActivityEntry(log) {
+      const meta = (log.metadata && typeof log.metadata === "object") ? log.metadata : {};
+      const rawActorEmail = log.actorEmail || "";
+      const actorName = log.actorType === "SUPER_ADMIN"
+        ? "Super Admin"
+        : (rawActorEmail ? rawActorEmail.split("@")[0] : (log.actorType || "Admin"));
+      const initials = actorName === "Super Admin"
+        ? "SA"
+        : actorName.slice(0, 2).toUpperCase();
+
+      const action = (log.action || "").toUpperCase();
+      let actionText = (log.action || "performed operation").replace(/_/g, " ").toLowerCase();
+      let target = meta.adminName || meta.name || meta.datasetName || log.resourceType || log.resourceId || "System";
+
+      if (action === "ADMIN_CREATED") {
+        actionText = "created administrator";
+        const createdName = meta.adminName || meta.name || "";
+        const createdEmail = meta.adminEmail || meta.email || "";
+        target = createdName && createdEmail
+          ? `${createdName} (${createdEmail})`
+          : (createdName || createdEmail || "New Admin");
+      } else if (action === "ADMIN_STATUS_CHANGED") {
+        if (meta.manuallyActivated || meta.status === "ACTIVE") {
+          actionText = "activated administrator";
+        } else if (meta.status === "DISABLED" && meta.previousStatus === "PENDING") {
+          actionText = "revoked invitation for";
+        } else if (meta.status === "DISABLED") {
+          actionText = "disabled administrator";
+        } else {
+          actionText = "updated status for";
+        }
+        target = meta.adminName || meta.adminEmail || "Administrator";
+      } else if (action === "ADMIN_DELETED") {
+        actionText = "deleted administrator";
+        target = meta.adminName || meta.name || meta.adminEmail || meta.email || "Administrator";
+      } else if (action === "ADMIN_UPDATED") {
+        actionText = "updated administrator";
+        target = meta.adminName || meta.adminEmail || "Administrator";
+      } else if (action === "VERIFICATION_RESENT") {
+        actionText = "resent invitation to";
+        target = meta.adminName || meta.adminEmail || "Administrator";
+      } else if (action === "EMAIL_VERIFIED") {
+        actionText = "verified email for";
+        target = meta.adminName || meta.adminEmail || actorName;
+      } else if (action === "PASSWORD_SETUP") {
+        actionText = "set up password for";
+        target = meta.adminName || meta.adminEmail || actorName;
+      } else if (action === "DATASET_UPLOAD_SUCCESS" || action === "DATASET_CREATED") {
+        actionText = "uploaded dataset";
+        target = meta.name || meta.datasetName || meta.originalFilename || "Dataset";
+      } else if (action === "DATASET_DELETED") {
+        actionText = "deleted dataset";
+        target = meta.name || meta.datasetName || "Dataset";
+      } else if (action === "DATASET_UPDATED") {
+        actionText = "updated dataset";
+        target = meta.name || meta.datasetName || "Dataset";
+      }
+
+      return {
+        actorName,
+        initials,
+        actionText,
+        target,
+        time: timeAgo(log.timestamp)
+      };
+    },
+
     async loadRecentActivity() {
       const container = document.getElementById("activityFeedList");
       if (!container) return;
 
       try {
-        const data = await apiClient.request("/api/logs?pageSize=4&stream=all");
-        const items = data.items || [];
+        const [allData, auditData] = await Promise.all([
+          apiClient.request("/api/logs?pageSize=25&stream=all").catch(() => ({ items: [] })),
+          apiClient.request("/api/logs?pageSize=10&stream=audit").catch(() => ({ items: [] }))
+        ]);
+
+        const mergedMap = new Map();
+        [...(allData.items || []), ...(auditData.items || [])].forEach(item => {
+          if (item && item.id) mergedMap.set(item.id, item);
+        });
+
+        const allItems = Array.from(mergedMap.values()).sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+
+        const passiveActions = new Set([
+          "DATASET_LIST_VIEWED",
+          "DATASET_MINE_VIEWED",
+          "DATASET_BOOKMARKED_VIEWED",
+          "DATASET_STATISTICS_VIEWED",
+          "DATASET_CONTRIBUTORS_VIEWED",
+          "DATASET_VIEWED",
+          "ADMIN_LIST_VIEWED",
+          "ADMIN_VIEWED",
+          "USER_VIEWED",
+          "TOKEN_REFRESH"
+        ]);
+
+        const meaningfulItems = allItems.filter(item => !passiveActions.has((item.action || "").toUpperCase()));
+        const items = (meaningfulItems.length > 0 ? meaningfulItems : allItems).slice(0, 5);
+
         if (items.length === 0) {
           container.innerHTML = `
             <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12px;">
@@ -1730,21 +1899,16 @@
         }
 
         container.innerHTML = items.map(log => {
-          const actorEmail = log.actorEmail || "Admin";
-          const actorName = actorEmail.split("@")[0];
-          const initials = actorName.slice(0, 2).toUpperCase();
-          const actionText = (log.action || "performed operation").replace(/_/g, " ").toLowerCase();
-          const target = log.resourceType || log.resourceId || "System";
-          const time = timeAgo(log.timestamp);
+          const formatted = this.formatActivityEntry(log);
 
           return `
             <div class="activity-item" data-id="${log.id}">
-              <div class="activity-avatar avatar-john">${initials}</div>
+              <div class="activity-avatar avatar-john">${escapeHtml(formatted.initials)}</div>
               <div class="activity-info">
                 <div class="activity-text">
-                  <strong>${escapeHtml(actorName)}</strong> ${escapeHtml(actionText)} <span class="activity-target">${escapeHtml(target)}</span>
+                  <strong>${escapeHtml(formatted.actorName)}</strong> ${escapeHtml(formatted.actionText)} <span class="activity-target">${escapeHtml(formatted.target)}</span>
                 </div>
-                <div class="activity-time">${time}</div>
+                <div class="activity-time">${formatted.time}</div>
               </div>
             </div>
           `;
@@ -1805,12 +1969,17 @@
           else if (stream.includes("database")) badgeClass = "action-storage";
           else if (stream.includes("security")) badgeClass = "action-query";
 
-          const actor = log.actorEmail ? log.actorEmail.split("@")[0] : (log.actorType || "Admin");
+          const actor = log.actorType === "SUPER_ADMIN"
+            ? "Super Admin"
+            : (log.actorEmail ? log.actorEmail.split("@")[0] : (log.actorType || "Admin"));
           const action = (log.action || "OPERATION").replace(/_/g, " ");
-          const target = log.resourceType || log.resourceId || "System";
+          const meta = (log.metadata && typeof log.metadata === "object") ? log.metadata : {};
+          const target = meta.adminName || meta.adminEmail || log.resourceType || log.resourceId || "System";
 
           let details = "";
-          if (log.metadata && typeof log.metadata === "object") {
+          if (log.action === "ADMIN_CREATED" && (meta.adminName || meta.adminEmail)) {
+            details = `Created administrator ${meta.adminName || ""} (${meta.adminEmail || ""})`.trim();
+          } else if (log.metadata && typeof log.metadata === "object") {
             const metaEntries = Object.entries(log.metadata)
               .filter(([k]) => !["method", "endpoint", "statusCode", "durationMs", "requestId"].includes(k))
               .map(([k, v]) => `${k}: ${v}`);
@@ -2183,8 +2352,9 @@
       if (classText) classText.textContent = meta.classification;
 
       const engineCount = (DashboardManager.stats?.databaseEngines && DashboardManager.stats.databaseEngines[dbName]) || 0;
+      const engineStorage = DashboardManager.stats?.databaseStorage?.[dbName]?.formatted || "0 B";
       const countPill = document.getElementById("dbHeroDatasetCountText");
-      if (countPill) countPill.textContent = `${engineCount} Datasets Stored`;
+      if (countPill) countPill.textContent = `${engineCount} Datasets Stored \u2022 ${engineStorage}`;
 
       const tabLabel1 = document.getElementById("dbTabDatasetsLabel");
       if (tabLabel1) tabLabel1.textContent = "Stored Datasets";
@@ -3224,15 +3394,16 @@
       if (elDown) elDown.textContent = String(totalDownloads);
 
       const pillTotal = document.getElementById("analyticsPillTotalDatasets");
-      if (pillTotal) pillTotal.textContent = `${totalDatasets} Datasets Indexed`;
+      const totalStorageStr = kpis.totalStorageFormatted || "0 B";
+      if (pillTotal) pillTotal.textContent = `${totalDatasets} Datasets Indexed \u2022 ${totalStorageStr}`;
 
-      this.renderEngineDistribution(stats.databaseEngines || {}, totalDatasets);
+      this.renderEngineDistribution(stats.databaseEngines || {}, totalDatasets, stats.databaseStorage || {});
       this.renderCategoryBreakdown(stats.categories || {}, totalDatasets);
       this.renderTimelineVelocity(stats.timeline || []);
-      this.renderDatabaseHealthMatrix(stats.databaseEngines || {});
+      this.renderDatabaseHealthMatrix(stats.databaseEngines || {}, stats.databaseStorage || {});
     },
 
-    renderEngineDistribution(engines, total) {
+    renderEngineDistribution(engines, total, storage = {}) {
       const container = document.getElementById("engineAnalyticsList");
       if (!container) return;
 
@@ -3248,6 +3419,7 @@
       const keys = Object.keys(engineColors);
       const rows = keys.map(engine => {
         const count = engines[engine] || 0;
+        const formattedStorage = storage[engine]?.formatted || "0 B";
         const pct = total > 0 ? Math.round((count / total) * 100) : 0;
         const meta = engineColors[engine];
 
@@ -3260,7 +3432,7 @@
                 <span style="font-size: 11px; color: var(--text-muted); font-family: monospace;">${meta.port}</span>
               </div>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 12.5px; font-weight: 700; color: var(--text-primary);">${count} datasets</span>
+                <span style="font-size: 12.5px; font-weight: 700; color: var(--text-primary);">${count} datasets (${formattedStorage})</span>
                 <span style="font-size: 11.5px; color: var(--text-muted); min-width: 32px; text-align: right;">${pct}%</span>
               </div>
             </div>
@@ -3376,7 +3548,7 @@
       `;
     },
 
-    renderDatabaseHealthMatrix(engines) {
+    renderDatabaseHealthMatrix(engines, storage = {}) {
       const container = document.getElementById("dbHealthMatrix");
       if (!container) return;
 
@@ -3391,6 +3563,7 @@
 
       container.innerHTML = matrixData.map(db => {
         const count = engines[db.name] || 0;
+        const formattedStorage = storage[db.name]?.formatted || "0 B";
         return `
           <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-hover, rgba(255,255,255,0.03)); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 8px;">
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -3401,7 +3574,7 @@
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">${count} datasets</span>
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">${count} datasets \u2022 ${formattedStorage}</span>
               <button class="btn-secondary" style="padding: 4px 10px; font-size: 11px; font-weight: 600;" data-open-db-screen="${db.name}">
                 Inspect &rarr;
               </button>
@@ -3879,6 +4052,13 @@
         }
       });
 
+      document.getElementById("btnModalOpenLink")?.addEventListener("click", () => {
+        const input = document.getElementById("copyInviteUrlInput");
+        if (input && input.value) {
+          window.open(input.value, "_blank");
+        }
+      });
+
       const closeCopyModal = () => {
         const m = document.getElementById("copyInviteLinkModal");
         if (m) m.style.display = "none";
@@ -3887,16 +4067,27 @@
       document.getElementById("btnDoneCopyInviteModal")?.addEventListener("click", closeCopyModal);
     },
 
+    toLocalhostUrl(url) {
+      if (!url) return "";
+      try {
+        const parsed = new URL(url, window.location.origin);
+        return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+      } catch {
+        return url.replace(/^https?:\/\/[^/]+/, window.location.origin);
+      }
+    },
+
     showCopyInviteModal(name, url) {
+      const localUrl = this.toLocalhostUrl(url);
       const modal = document.getElementById("copyInviteLinkModal");
       const nameEl = document.getElementById("copyInviteAdminName");
       const urlInput = document.getElementById("copyInviteUrlInput");
       if (nameEl) nameEl.textContent = name || "Administrator";
-      if (urlInput) urlInput.value = url || "";
+      if (urlInput) urlInput.value = localUrl || "";
       if (modal) modal.style.display = "flex";
 
       // Automatically copy to clipboard if supported
-      navigator.clipboard?.writeText(url).then(() => {
+      navigator.clipboard?.writeText(localUrl).then(() => {
         showToast("Verification link copied to clipboard!", "success");
       }).catch(() => {});
     },
@@ -3982,61 +4173,33 @@
 
       try {
         const payload = { name, email };
-        const res = await apiClient.request("/api/admins", {
+        await apiClient.request("/api/admins", {
           method: "POST",
           body: JSON.stringify(payload)
         });
 
-        const verificationUrl = res?.verificationUrl || "";
-
         if (succEl) {
           succEl.innerHTML = `
             <div style="font-weight: 700; margin-bottom: 4px; color: #10B981; font-size: 13.5px;">✓ Administrator Invited (Status: PENDING)</div>
-            <div style="font-size: 12px; margin-bottom: 8px;">
-              An email verification request was queued for <strong>${escapeHtml(email)}</strong>.<br>
-              <strong>Security Rule:</strong> This account remains in <em>PENDING</em> status and <u>cannot log in or be activated</u> until the administrator opens the verification link and establishes an Argon2id password.
+            <div style="font-size: 12px;">
+              An email verification and password setup invitation was sent to <strong>${escapeHtml(email)}</strong>.<br>
+              <strong>Security Rule:</strong> This account remains in <em>PENDING</em> status and <u>cannot log in or be activated</u> until the administrator verifies their email and establishes a password.
             </div>
-            ${verificationUrl ? `
-              <div style="margin-top: 10px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px 12px;">
-                <div style="font-size: 11px; font-weight: 600; color: #93C5FD; margin-bottom: 6px;">Direct Public Verification URL:</div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="text" id="newAdminVerificationUrlInput" readonly value="${escapeHtml(verificationUrl)}" style="background: var(--bg-surface-alt, #0f172a); border: 1px solid var(--border-subtle, #334155); color: #38BDF8; font-family: monospace; font-size: 11.5px; padding: 6px 10px; border-radius: 6px; width: 100%;">
-                  <button type="button" class="btn-primary" id="btnCopyNewAdminLink" style="white-space: nowrap; padding: 6px 12px; font-size: 11.5px;">Copy Link</button>
-                </div>
-                <div style="font-size: 10.5px; color: var(--text-muted, #94a3b8); margin-top: 4px;">
-                  If Brevo delivery is delayed or disabled, you can send this public URL directly to the user's phone, tablet, or laptop.
-                </div>
-              </div>
-            ` : ""}
           `;
           succEl.style.display = "block";
-
-          if (verificationUrl) {
-            this.showCopyInviteModal(name, verificationUrl);
-          }
-
-          document.getElementById("btnCopyNewAdminLink")?.addEventListener("click", () => {
-            const input = document.getElementById("newAdminVerificationUrlInput");
-            if (input) {
-              navigator.clipboard?.writeText(input.value).then(() => {
-                showToast("Verification URL copied to clipboard!", "success");
-              }).catch(() => {
-                input.select();
-                document.execCommand("copy");
-                showToast("Verification URL copied to clipboard!", "success");
-              });
-            }
-          });
         }
 
-        showToast(`Administrator invited! Account is PENDING verification.`, "success");
+        showToast(`Administrator invited! Verification email sent to ${email}.`, "success");
 
         // Reset inputs
         if (nameInput) nameInput.value = "";
         if (emailInput) emailInput.value = "";
 
-        // Reload admin list
+        // Reload admin list and activity feed
         await this.loadAdmins(false);
+        if (typeof ActivityLogsManager !== "undefined") {
+          ActivityLogsManager.loadRecentActivity();
+        }
 
       } catch (err) {
         console.error("Failed to create admin:", err);
@@ -4167,8 +4330,8 @@
                 <button class="btn-secondary btn-activate-admin" data-id="${admin.id}" data-name="${escapeHtml(name)}" data-email="${escapeHtml(email)}" title="Directly activate administrator and set password" style="padding: 4px 10px; font-size: 11.5px; color: #059669; font-weight: 600;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 3px; vertical-align: -1px;"><polyline points="20 6 9 17 4 12"/></svg>Activate
                 </button>
-                <button class="btn-secondary btn-resend-invite" data-id="${admin.id}" data-name="${escapeHtml(name)}" title="Resend verification email and copy link" style="padding: 4px 10px; font-size: 11.5px; color: #2563EB;">
-                  Resend Link
+                <button class="btn-secondary btn-resend-invite" data-id="${admin.id}" data-name="${escapeHtml(name)}" title="Resend verification email" style="padding: 4px 10px; font-size: 11.5px; color: #2563EB;">
+                  Resend Invite
                 </button>
                 <button class="btn-secondary btn-revoke-invite" data-id="${admin.id}" data-name="${escapeHtml(name)}" title="Revoke this pending invitation" style="padding: 4px 10px; font-size: 11.5px; color: #EF4444;">
                   Revoke
@@ -4278,6 +4441,9 @@
           showToast(`Admin ${name || 'User'} activated successfully!`, "success");
         }
         await this.loadAdmins(false);
+        if (typeof ActivityLogsManager !== "undefined") {
+          ActivityLogsManager.loadRecentActivity();
+        }
       } catch (err) {
         console.error("Failed to activate admin:", err);
         showToast(err.message || "Failed to activate administrator", "error");
@@ -4295,27 +4461,13 @@
         buttonEl.textContent = "Sending...";
       }
       try {
-        const res = await apiClient.request(`/api/admins/${id}/resend-verification`, {
+        await apiClient.request(`/api/admins/${id}/resend-verification`, {
           method: "POST"
         });
-        
-        if (res && res.verificationUrl) {
-          this.showCopyInviteModal(name || "Administrator", res.verificationUrl);
-          showToast(`Invite resent & verification link copied to clipboard!`, "success");
-          
-          // Show alert with the link for easy copying
-          const succEl = document.getElementById("createAdminSuccessMsg");
-          if (succEl) {
-            succEl.innerHTML = `
-              <strong>New Verification Link for ${escapeHtml(name || 'Admin')}:</strong><br>
-              <div style="margin-top: 6px; display: flex; gap: 8px;">
-                <input type="text" readonly value="${escapeHtml(res.verificationUrl)}" style="background: var(--bg-surface-alt); border: 1px solid var(--border-subtle); color: #38BDF8; font-family: monospace; font-size: 11.5px; padding: 4px 8px; border-radius: 4px; width: 100%;">
-              </div>
-            `;
-            succEl.style.display = "block";
-          }
-        } else {
-          showToast(`Verification invitation resent to ${name || 'administrator'}`);
+
+        showToast(`Verification invitation email resent to ${name || 'administrator'}!`, "success");
+        if (typeof ActivityLogsManager !== "undefined") {
+          ActivityLogsManager.loadRecentActivity();
         }
       } catch (err) {
         console.error("Failed to resend verification:", err);
@@ -4323,7 +4475,7 @@
       } finally {
         if (buttonEl) {
           buttonEl.disabled = false;
-          buttonEl.textContent = "Resend Link";
+          buttonEl.textContent = "Resend Invite";
         }
       }
     },
@@ -4344,6 +4496,9 @@
         });
         showToast(`Admin ${name || ''} set to ${nextStatus.toLowerCase()}`);
         await this.loadAdmins(false);
+        if (typeof ActivityLogsManager !== "undefined") {
+          ActivityLogsManager.loadRecentActivity();
+        }
       } catch (err) {
         console.error("Failed to update admin status:", err);
         showToast(err.message || "Failed to update admin status", "error");
@@ -4372,6 +4527,9 @@
         });
         showToast(`Administrator "${name || 'User'}" permanently deleted.`, "success");
         await this.loadAdmins(false);
+        if (typeof ActivityLogsManager !== "undefined") {
+          ActivityLogsManager.loadRecentActivity();
+        }
       } catch (err) {
         console.error("Failed to delete admin:", err);
         const errMsg = err.status === 409

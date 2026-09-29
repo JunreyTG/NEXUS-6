@@ -447,9 +447,20 @@ export class DatasetService {
         totalDatasets: categoryStats.totalDatasets,
         totalContributors: contributorStats.totalContributors,
         categoriesCount: activeCategoriesCount || DATASET_CATEGORIES.length,
-        totalDownloads: downloadCount
+        totalDownloads: downloadCount,
+        totalStorageBytes: categoryStats.totalStorageBytes ?? 0,
+        totalStorageFormatted: categoryStats.totalStorageFormatted ?? "0 B"
       },
       databaseEngines: categoryStats.databaseEngines,
+      databaseStorageBytes: categoryStats.databaseStorageBytes ?? { MySQL: 0, SQLServer: 0, PostgreSQL: 0, MongoDB: 0, Neo4J: 0, CouchBase: 0 },
+      databaseStorage: categoryStats.databaseStorage ?? {
+        MySQL: { bytes: 0, formatted: "0 B", datasets: 0 },
+        SQLServer: { bytes: 0, formatted: "0 B", datasets: 0 },
+        PostgreSQL: { bytes: 0, formatted: "0 B", datasets: 0 },
+        MongoDB: { bytes: 0, formatted: "0 B", datasets: 0 },
+        Neo4J: { bytes: 0, formatted: "0 B", datasets: 0 },
+        CouchBase: { bytes: 0, formatted: "0 B", datasets: 0 }
+      },
       categories: categoryStats.categories,
       categoryBreakdown: categoryStats.breakdown,
       timeline
@@ -474,8 +485,19 @@ export class DatasetService {
     }
     return {
       totalDatasets: 0,
+      totalStorageBytes: 0,
+      totalStorageFormatted: "0 B",
       categories: { Education: 0, Environment: 0, Transportation: 0, Demographics: 0, Business: 0, Finance: 0, Healthcare: 0 },
       databaseEngines: { MySQL: 0, SQLServer: 0, PostgreSQL: 0, MongoDB: 0, Neo4J: 0, CouchBase: 0 },
+      databaseStorageBytes: { MySQL: 0, SQLServer: 0, PostgreSQL: 0, MongoDB: 0, Neo4J: 0, CouchBase: 0 },
+      databaseStorage: {
+        MySQL: { bytes: 0, formatted: "0 B", datasets: 0 },
+        SQLServer: { bytes: 0, formatted: "0 B", datasets: 0 },
+        PostgreSQL: { bytes: 0, formatted: "0 B", datasets: 0 },
+        MongoDB: { bytes: 0, formatted: "0 B", datasets: 0 },
+        Neo4J: { bytes: 0, formatted: "0 B", datasets: 0 },
+        CouchBase: { bytes: 0, formatted: "0 B", datasets: 0 }
+      },
       breakdown: []
     };
   }

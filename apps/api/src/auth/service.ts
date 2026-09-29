@@ -58,7 +58,11 @@ function invalidCredentials(): never {
 }
 
 function safeUser(principal: AuthenticatedPrincipal): SafeUser {
-  return { email: principal.email, role: principal.role };
+  return {
+    email: principal.email,
+    role: principal.role,
+    ...(principal.name ? { name: principal.name } : {})
+  };
 }
 
 async function safeLog(operation: () => Promise<void>): Promise<void> {
@@ -140,7 +144,10 @@ export class AuthService {
       invalidCredentials();
     }
 
-    const result = await this.createSession({ type: "ADMIN", id: admin.id, email: admin.email, role: "ADMIN" }, config, metadata);
+    const adminName = typeof (admin as { name?: unknown }).name === "string" && (admin as { name: string }).name.trim()
+      ? (admin as { name: string }).name.trim()
+      : undefined;
+    const result = await this.createSession({ type: "ADMIN", id: admin.id, email: admin.email, ...(adminName ? { name: adminName } : {}), role: "ADMIN" }, config, metadata);
     await safeLog(() => this.dependencies.logger.recordLogin({ actorType: "ADMIN", actorId: admin.id, actorEmail: admin.email, ...metadata, action: "LOGIN", success: true }));
     return result;
   }
@@ -172,8 +179,11 @@ export class AuthService {
         await safeLog(() => this.dependencies.logger.recordSecurity({ actorType: "ADMIN", actorId: adminSession.admin.id, actorEmail: adminSession.admin.email, ...metadata, action: "REFRESH_TOKEN_REUSE", success: false, errorCode: "REFRESH_TOKEN_REUSED" }));
         throw new AuthenticationError();
       }
+      const sessionAdminName = typeof (adminSession.admin as { name?: unknown }).name === "string" && (adminSession.admin as { name: string }).name.trim()
+        ? (adminSession.admin as { name: string }).name.trim()
+        : undefined;
       const result = await this.createSession(
-        { type: "ADMIN", id: adminSession.admin.id, email: adminSession.admin.email, role: "ADMIN" },
+        { type: "ADMIN", id: adminSession.admin.id, email: adminSession.admin.email, ...(sessionAdminName ? { name: sessionAdminName } : {}), role: "ADMIN" },
         config,
         metadata
       );

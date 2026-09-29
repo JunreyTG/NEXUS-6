@@ -399,7 +399,7 @@
             <!-- HERO BANNER -->
           <section class="hero-banner">
             <div class="hero-text">
-              <h2 class="hero-greeting">Good morning, JLee!</h2>
+              <h2 class="hero-greeting" id="heroGreeting">Good morning!</h2>
               <p class="hero-subtext">Discover, contribute, and manage datasets all in one place.</p>
             </div>
             <div class="hero-illustration">
@@ -1534,8 +1534,8 @@
                   </svg>
                 </div>
                 <div class="db-card-title">MySQL</div>
-                <div class="db-card-count">324 datasets</div>
-                <div class="db-card-size">4.2 GB</div>
+                <div class="db-card-count">0 datasets</div>
+                <div class="db-card-size">0 B</div>
                 <button class="btn-db-explore explore-db01" data-explore-db="MySQL">Explore &rarr;</button>
               </div>
 
@@ -1549,8 +1549,8 @@
                   </svg>
                 </div>
                 <div class="db-card-title">SQLServer</div>
-                <div class="db-card-count">182 datasets</div>
-                <div class="db-card-size">2.8 GB</div>
+                <div class="db-card-count">0 datasets</div>
+                <div class="db-card-size">0 B</div>
                 <button class="btn-db-explore explore-db02" data-explore-db="SQLServer">Explore &rarr;</button>
               </div>
 
@@ -1564,8 +1564,8 @@
                   </svg>
                 </div>
                 <div class="db-card-title">PostgreSQL</div>
-                <div class="db-card-count">215 datasets</div>
-                <div class="db-card-size">3.1 GB</div>
+                <div class="db-card-count">0 datasets</div>
+                <div class="db-card-size">0 B</div>
                 <button class="btn-db-explore explore-db03" data-explore-db="PostgreSQL">Explore &rarr;</button>
               </div>
 
@@ -1579,8 +1579,8 @@
                   </svg>
                 </div>
                 <div class="db-card-title">MongoDB</div>
-                <div class="db-card-count">156 datasets</div>
-                <div class="db-card-size">1.9 GB</div>
+                <div class="db-card-count">0 datasets</div>
+                <div class="db-card-size">0 B</div>
                 <button class="btn-db-explore explore-db04" data-explore-db="MongoDB">Explore &rarr;</button>
               </div>
 
@@ -1594,8 +1594,8 @@
                   </svg>
                 </div>
                 <div class="db-card-title">Neo4J</div>
-                <div class="db-card-count">291 datasets</div>
-                <div class="db-card-size">5.7 GB</div>
+                <div class="db-card-count">0 datasets</div>
+                <div class="db-card-size">0 B</div>
                 <button class="btn-db-explore explore-db05" data-explore-db="Neo4J">Explore &rarr;</button>
               </div>
 
@@ -1609,8 +1609,8 @@
                   </svg>
                 </div>
                 <div class="db-card-title">CouchBase</div>
-                <div class="db-card-count">80 datasets</div>
-                <div class="db-card-size">1.2 GB</div>
+                <div class="db-card-count">0 datasets</div>
+                <div class="db-card-size">0 B</div>
                 <button class="btn-db-explore explore-db06" data-explore-db="CouchBase">Explore &rarr;</button>
               </div>
             </div>
@@ -1850,6 +1850,7 @@
           <div style="display: flex; gap: 8px;">
             <input type="text" id="copyInviteUrlInput" readonly style="background: var(--bg-surface-alt); border: 1.5px solid var(--border-subtle); color: var(--primary-600); font-family: monospace; font-size: 12px; padding: 8px 10px; border-radius: 6px; width: 100%;">
             <button type="button" class="btn-primary" id="btnModalCopyLink" style="white-space: nowrap; padding: 8px 14px; font-size: 12px;">Copy Link</button>
+            <button type="button" class="btn-secondary" id="btnModalOpenLink" style="white-space: nowrap; padding: 8px 14px; font-size: 12px; color: #059669; font-weight: 600;">Open Link Now</button>
           </div>
           <small style="color: var(--text-muted); font-size: 11px; margin-top: 6px; display: block;">
             Works on any phone, tablet, laptop, or desktop browser. The administrator will be prompted to set their password before activating.

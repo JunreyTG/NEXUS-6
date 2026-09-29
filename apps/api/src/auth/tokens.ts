@@ -18,7 +18,8 @@ export async function issueAccessToken(
   return new SignJWT({
     type: principal.type,
     role: principal.role,
-    email: principal.email
+    email: principal.email,
+    ...(principal.name ? { name: principal.name } : {})
   })
     .setProtectedHeader({ alg: TOKEN_ALGORITHM, typ: "JWT" })
     .setIssuer(TOKEN_ISSUER)
@@ -53,6 +54,7 @@ export async function verifyAccessToken(token: string, config: AuthConfig): Prom
       type: role,
       id: role === "SUPER_ADMIN" ? null : payload.sub,
       email,
+      ...(typeof payload.name === "string" && payload.name.trim() ? { name: payload.name.trim() } : {}),
       role,
       sessionId
     };

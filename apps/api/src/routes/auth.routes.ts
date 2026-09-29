@@ -91,7 +91,11 @@ export function createAuthRouter(authService = new AuthService(), adminService =
         metadata: { category: "AUTHENTICATION" }
       });
     }
-    response.status(200).json({ email: request.principal!.email, role: request.principal!.role });
+    response.status(200).json({
+      email: request.principal!.email,
+      role: request.principal!.role,
+      ...(request.principal!.name ? { name: request.principal!.name } : {})
+    });
   });
 
   router.get("/verify-email", authActionRateLimit, async (request, response, next) => {

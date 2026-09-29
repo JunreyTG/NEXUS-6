@@ -4,11 +4,14 @@ export type AuthenticatedPrincipal = {
   type: AuthRole;
   id: string | null;
   email: string;
+  name?: string | undefined;
   role: AuthRole;
   sessionId?: string | undefined;
 };
 
-export type SafeUser = Pick<AuthenticatedPrincipal, "email" | "role">;
+export type SafeUser = Pick<AuthenticatedPrincipal, "email" | "role"> & {
+  name?: string | undefined;
+};
 
 declare global {
   // Express request augmentation is required for authenticated middleware.

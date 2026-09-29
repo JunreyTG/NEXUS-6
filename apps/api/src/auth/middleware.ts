@@ -22,6 +22,10 @@ export function createAuthenticate(sessions = new AuthSessionRepository()): Requ
       if (principal.role === "ADMIN") {
         const session = await sessions.findAdminById(principal.sessionId);
         active = Boolean(session && !session.revokedAt && session.expiresAt > now && session.admin.emailVerified && session.admin.status === "ACTIVE" && session.admin.passwordHash);
+        const adminName = (session?.admin as { name?: unknown } | undefined)?.name;
+        if (active && typeof adminName === "string" && adminName.trim()) {
+          principal.name = adminName.trim();
+        }
       } else {
         const session = await sessions.findSuperAdminById(principal.sessionId);
         active = Boolean(session && !session.revokedAt && session.expiresAt > now);

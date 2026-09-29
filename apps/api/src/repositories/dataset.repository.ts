@@ -169,12 +169,14 @@ export class DatasetRepository {
     if (options.database) {
       const engine = matchDatabaseEngine(options.database);
       if (engine) {
-        andConditions.push({
-          OR: [
-            { selectedEngine: engine },
-            { AND: [{ selectedEngine: null }, { recommendedEngine: engine }] }
-          ]
-        });
+        const engineOr: Prisma.DatasetWhereInput[] = [
+          { selectedEngine: engine },
+          { AND: [{ selectedEngine: null }, { recommendedEngine: engine }] }
+        ];
+        if (engine === "POSTGRESQL") {
+          engineOr.push({ AND: [{ selectedEngine: null }, { recommendedEngine: null }] });
+        }
+        andConditions.push({ OR: engineOr });
       }
     }
 
@@ -293,7 +295,8 @@ export class DatasetRepository {
           id: true,
           category: true,
           selectedEngine: true,
-          recommendedEngine: true
+          recommendedEngine: true,
+          fileSizeBytes: true
         }
       });
 
@@ -316,6 +319,15 @@ export class DatasetRepository {
         CouchBase: 0
       };
 
+      const databaseStorageBytes: Record<string, number> = {
+        MySQL: 0,
+        SQLServer: 0,
+        PostgreSQL: 0,
+        MongoDB: 0,
+        Neo4J: 0,
+        CouchBase: 0
+      };
+
       const engineNameMap: Record<string, string> = {
         MYSQL: "MySQL",
         SQLSERVER: "SQLServer",
@@ -324,6 +336,8 @@ export class DatasetRepository {
         NEO4J: "Neo4J",
         COUCHBASE: "CouchBase"
       };
+
+      let totalStorageBytes = 0;
 
       for (const ds of allDatasets) {
         if (ds.category) {
@@ -341,14 +355,37 @@ export class DatasetRepository {
           }
         }
 
-        const engine = ds.selectedEngine ?? ds.recommendedEngine;
+        const sizeBytes = Number(ds.fileSizeBytes ?? 0);
+        totalStorageBytes += sizeBytes;
+
+        const engine = ds.selectedEngine ?? ds.recommendedEngine ?? "POSTGRESQL";
         if (engine && engineNameMap[engine]) {
           const mappedName = engineNameMap[engine];
           if (mappedName) {
             const currentEngineCount = databaseEngines[mappedName];
             databaseEngines[mappedName] = (currentEngineCount !== undefined ? currentEngineCount : 0) + 1;
+            const currentEngineBytes = databaseStorageBytes[mappedName];
+            databaseStorageBytes[mappedName] = (currentEngineBytes !== undefined ? currentEngineBytes : 0) + sizeBytes;
           }
         }
+      }
+
+      const formatStorageBytes = (bytes: number): string => {
+        if (!bytes || bytes <= 0) return "0 B";
+        const units = ["B", "KB", "MB", "GB", "TB"];
+        const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        const value = bytes / Math.pow(1024, i);
+        return `${i === 0 ? Math.round(value) : Number(value.toFixed(1))} ${units[i]}`;
+      };
+
+      const databaseStorage: Record<string, { bytes: number; formatted: string; datasets: number }> = {};
+      for (const dbName of Object.keys(databaseEngines)) {
+        const bytes = databaseStorageBytes[dbName] ?? 0;
+        databaseStorage[dbName] = {
+          bytes,
+          formatted: formatStorageBytes(bytes),
+          datasets: databaseEngines[dbName] ?? 0
+        };
       }
 
       const total = allDatasets.length;
@@ -360,8 +397,12 @@ export class DatasetRepository {
 
       return {
         totalDatasets: total,
+        totalStorageBytes,
+        totalStorageFormatted: formatStorageBytes(totalStorageBytes),
         categories,
         databaseEngines,
+        databaseStorageBytes,
+        databaseStorage,
         breakdown
       };
     });
