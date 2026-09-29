@@ -3940,9 +3940,38 @@
     admins: [],
     searchQuery: "",
     activeTab: "create",
+    autoRefreshTimer: null,
+    autoRefreshIntervalMs: 5000,
 
     init() {
       this.bindEvents();
+    },
+
+    startAutoRefresh() {
+      if (this.autoRefreshTimer) {
+        clearInterval(this.autoRefreshTimer);
+      }
+      const badge = document.getElementById("adminAutoRefreshBadge");
+      if (badge) {
+        badge.style.display = "inline-flex";
+      }
+      this.autoRefreshTimer = setInterval(() => {
+        const modal = document.getElementById("createAdminModal");
+        if (modal && modal.style.display !== "none") {
+          this.loadAdmins(false);
+        }
+      }, this.autoRefreshIntervalMs);
+    },
+
+    stopAutoRefresh() {
+      if (this.autoRefreshTimer) {
+        clearInterval(this.autoRefreshTimer);
+        this.autoRefreshTimer = null;
+      }
+      const badge = document.getElementById("adminAutoRefreshBadge");
+      if (badge) {
+        badge.style.display = "none";
+      }
     },
 
     bindEvents() {
@@ -4231,8 +4260,27 @@
       if (!container) return;
 
       try {
+        const previousStatusById = new Map(
+          (this.admins || []).map(a => [a.id, (a.status || "").toUpperCase()])
+        );
+
         const list = await apiClient.request("/api/admins");
         this.admins = Array.isArray(list) ? list : [];
+
+        // Detect if any previously PENDING admin just became ACTIVE during auto-refresh
+        if (previousStatusById.size > 0) {
+          const newlyActivated = this.admins.filter(
+            a => previousStatusById.get(a.id) === "PENDING" && (a.status || "").toUpperCase() === "ACTIVE"
+          );
+          if (newlyActivated.length > 0) {
+            newlyActivated.forEach(a => {
+              showToast(`Administrator "${a.name || a.email}" verified and is now ACTIVE!`, "success");
+            });
+            if (typeof ActivityLogsManager !== "undefined") {
+              ActivityLogsManager.loadRecentActivity();
+            }
+          }
+        }
 
         // Update badge count
         const countBadge = document.getElementById("adminDirectoryCount");
@@ -4456,6 +4504,9 @@
     },
 
     async resendVerification(id, name, buttonEl) {
+      // Trigger 5-second auto-refresh of the Admin Directory as soon as Resend is clicked
+      this.startAutoRefresh();
+
       if (buttonEl) {
         buttonEl.disabled = true;
         buttonEl.textContent = "Sending...";
@@ -4465,7 +4516,8 @@
           method: "POST"
         });
 
-        showToast(`Verification invitation email resent to ${name || 'administrator'}!`, "success");
+        showToast(`Verification invitation email resent to ${name || 'administrator'}! Auto-refreshing directory every 5s.`, "success");
+        await this.loadAdmins(false);
         if (typeof ActivityLogsManager !== "undefined") {
           ActivityLogsManager.loadRecentActivity();
         }
