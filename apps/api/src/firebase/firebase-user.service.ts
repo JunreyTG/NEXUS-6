@@ -118,6 +118,31 @@ export class FirebaseUserService {
   }
 
   /**
+   * Ensures the user account exists in Firebase Authentication so password reset emails can be sent.
+   */
+  async ensureFirebaseAuthUser(email: string): Promise<boolean> {
+    if (process.env.NODE_ENV === "test" || !this.config.configured || !this.config.apiKey) {
+      return false;
+    }
+
+    try {
+      const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(this.config.apiKey)}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password: "Nexus@" + Math.random().toString(36).slice(2, 10) + "!",
+          returnSecureToken: true
+        })
+      });
+      return res.ok || res.status === 400; // 400 with EMAIL_EXISTS is expected if user already exists
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Dispatches a Password Reset / Configuration Link via Firebase Auth REST API.
    * Sends directly from `@firebaseapp.com` with no custom domain required.
    */
@@ -127,6 +152,8 @@ export class FirebaseUserService {
     }
 
     try {
+      await this.ensureFirebaseAuthUser(email);
+
       const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${encodeURIComponent(this.config.apiKey)}`;
       const res = await fetch(url, {
         method: "POST",

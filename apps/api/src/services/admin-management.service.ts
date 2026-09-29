@@ -145,6 +145,11 @@ export class AdminManagementService {
       throw new ConflictError("CANNOT_ACTIVATE_UNVERIFIED_ADMIN");
     }
     const updated = await this.dependencies.admins.updateStatus(id, status);
+    if (status === "DISABLED") {
+      const now = this.dependencies.now();
+      await this.dependencies.tokens.invalidateVerifications(id, now);
+      await this.dependencies.tokens.invalidateSetups(id, now);
+    }
     void this.dependencies.firebase?.syncUserToFirestore({
       id: updated.id,
       name: updated.name,
@@ -155,6 +160,56 @@ export class AdminManagementService {
     });
     await this.audit({ ...actor, action: "ADMIN_STATUS_CHANGED", resourceType: "ADMIN", resourceId: id, success: true, metadata: { previousStatus: existing.status, status } });
     return safeAdmin(updated as unknown as Record<string, unknown>);
+  }
+
+  /**
+   * Super Admin direct activation of an administrator.
+   * Allows setting a password or generates a secure temporary password, immediately activating the account.
+   */
+  async activateAdmin(id: string, password?: string, actor: LogActor = { actorType: "SYSTEM" }) {
+    const existing = await this.dependencies.admins.findById(id);
+    if (!existing) throw new NotFoundError("ADMIN_NOT_FOUND");
+
+    const effectivePassword = password && password.trim().length >= 8
+      ? password.trim()
+      : (existing.passwordHash ? undefined : ("Admin@" + Math.random().toString(36).slice(2, 8) + "!" + Math.floor(100 + Math.random() * 900)));
+
+    let passwordHash = existing.passwordHash;
+    if (effectivePassword) {
+      passwordHash = await this.dependencies.hashPassword(effectivePassword);
+    } else if (!passwordHash) {
+      throw new ConflictError("CANNOT_ACTIVATE_WITHOUT_PASSWORD");
+    }
+
+    const admin = await this.dependencies.admins.setPassword(id, passwordHash);
+    await this.dependencies.admins.markEmailVerified(id);
+
+    const now = this.dependencies.now();
+    await this.dependencies.tokens.invalidateVerifications(id, now);
+    await this.dependencies.tokens.invalidateSetups(id, now);
+
+    void this.dependencies.firebase?.syncUserToFirestore({
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      role: "ADMIN",
+      status: "ACTIVE",
+      emailVerified: true
+    });
+
+    await this.audit({
+      ...actor,
+      action: "ADMIN_STATUS_CHANGED",
+      resourceType: "ADMIN",
+      resourceId: id,
+      success: true,
+      metadata: { previousStatus: existing.status, status: "ACTIVE", manuallyActivated: true }
+    });
+
+    return {
+      ...safeAdmin(admin as unknown as Record<string, unknown>),
+      ...(effectivePassword ? { temporaryPassword: effectivePassword } : {})
+    };
   }
 
   async deleteAdmin(id: string, actor: LogActor = { actorType: "SYSTEM" }) {
@@ -236,19 +291,40 @@ export class AdminManagementService {
 
   async syncAllToFirebase() {
     const list = await this.dependencies.admins.list();
-    const results = await Promise.all(
-      list.map((admin) =>
-        this.dependencies.firebase?.syncUserToFirestore({
-          id: admin.id,
-          name: admin.name,
-          email: admin.email,
-          role: "ADMIN",
-          status: admin.status,
-          emailVerified: admin.emailVerified
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase();
+
+    const tasks: Promise<boolean | undefined>[] = [];
+
+    if (superAdminEmail && this.dependencies.firebase) {
+      tasks.push(
+        this.dependencies.firebase.syncUserToFirestore({
+          id: "super-admin",
+          name: "Super Administrator",
+          email: superAdminEmail,
+          role: "SUPER_ADMIN",
+          status: "ACTIVE",
+          emailVerified: true
         })
-      )
-    );
-    return { synced: results.filter(Boolean).length, total: list.length };
+      );
+    }
+
+    for (const admin of list) {
+      if (this.dependencies.firebase) {
+        tasks.push(
+          this.dependencies.firebase.syncUserToFirestore({
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            role: "ADMIN",
+            status: admin.status,
+            emailVerified: admin.emailVerified
+          })
+        );
+      }
+    }
+
+    const results = await Promise.all(tasks);
+    return { synced: results.filter(Boolean).length, total: tasks.length };
   }
 
   private async audit(input: Parameters<ActivityLogger["recordAudit"]>[0]): Promise<void> {

@@ -21,6 +21,7 @@ const createAdminSchema = z.object({
 });
 const patchAdminSchema = createAdminSchema.partial().refine((value) => Object.keys(value).length > 0);
 const statusSchema = z.object({ status: z.enum(["PENDING", "ACTIVE", "DISABLED"]) });
+const activateAdminSchema = z.object({ password: z.string().min(8).max(100).optional() });
 
 export function createAdminRouter(service = new AdminManagementService(), authenticateMiddleware: RequestHandler = authenticate): Router {
   const router = Router();
@@ -74,6 +75,15 @@ export function createAdminRouter(service = new AdminManagementService(), authen
   router.post("/:id/resend-verification", async (request, response, next) => {
     try {
       response.status(202).json(await service.resendVerification(idSchema.parse(request.params.id), requestActor(request)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:id/activate", async (request, response, next) => {
+    try {
+      const input = activateAdminSchema.parse(request.body || {});
+      response.status(200).json(await service.activateAdmin(idSchema.parse(request.params.id), input.password, requestActor(request)));
     } catch (error) {
       next(error);
     }

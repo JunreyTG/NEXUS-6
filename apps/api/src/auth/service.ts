@@ -98,7 +98,13 @@ export class AuthService {
     const email = input.email.trim().toLowerCase();
 
     if (email === config.SUPER_ADMIN_EMAIL) {
-      const valid = await this.dependencies.verifyPassword(config.SUPER_ADMIN_PASSWORD_HASH, input.password);
+      let valid = await this.dependencies.verifyPassword(config.SUPER_ADMIN_PASSWORD_HASH, input.password);
+      if (!valid && this.dependencies.firebase?.isConfigured) {
+        const fbCheck = await this.dependencies.firebase.verifyFirebasePassword(email, input.password);
+        if (fbCheck.success) {
+          valid = true;
+        }
+      }
       if (!valid) {
         await safeLog(() => this.dependencies.logger.recordLogin({ actorType: "SUPER_ADMIN", actorEmail: email, ...metadata, action: "LOGIN", success: false, errorCode: INVALID_CREDENTIALS }));
         invalidCredentials();

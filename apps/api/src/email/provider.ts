@@ -112,7 +112,7 @@ export class BrevoEmailProvider implements EmailProvider {
       const senderEmail = this.config.BREVO_SENDER_EMAIL || extractEmail(this.config.EMAIL_FROM) || "daplinankaila91@gmail.com";
       const senderName = this.config.BREVO_SENDER_NAME || extractName(this.config.EMAIL_FROM) || "DataVault6";
 
-      // If SMTP relay credentials are provided, send directly via Brevo SMTP relay
+      // If SMTP relay credentials are provided, send directly via Brevo/Gmail SMTP relay
       if (this.config.BREVO_SMTP_KEY && this.config.BREVO_SMTP_USER) {
         try {
           const transporter = nodemailer.createTransport({
@@ -121,7 +121,7 @@ export class BrevoEmailProvider implements EmailProvider {
             secure: false,
             auth: {
               user: this.config.BREVO_SMTP_USER,
-              pass: this.config.BREVO_SMTP_KEY
+              pass: this.config.BREVO_SMTP_KEY.replace(/\s+/g, "")
             }
           });
 
@@ -134,6 +134,7 @@ export class BrevoEmailProvider implements EmailProvider {
             ...(payload.textContent ? { text: payload.textContent } : {}),
             ...(payload.headers ? { headers: payload.headers } : {})
           });
+          console.info(`[Email Dispatch] Verification email dispatched successfully via SMTP to ${toAddresses}`);
           return;
         } catch (smtpErr) {
           console.warn("[Brevo SMTP Relay warning, attempting REST API fallback]:", smtpErr);

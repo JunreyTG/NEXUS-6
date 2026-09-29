@@ -4164,13 +4164,19 @@
             <div class="admin-actions-cell">
               <span class="${statusBadgeClass}">${escapeHtml(statusLabel)}</span>
               ${isPending ? `
+                <button class="btn-secondary btn-activate-admin" data-id="${admin.id}" data-name="${escapeHtml(name)}" data-email="${escapeHtml(email)}" title="Directly activate administrator and set password" style="padding: 4px 10px; font-size: 11.5px; color: #059669; font-weight: 600;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 3px; vertical-align: -1px;"><polyline points="20 6 9 17 4 12"/></svg>Activate
+                </button>
                 <button class="btn-secondary btn-resend-invite" data-id="${admin.id}" data-name="${escapeHtml(name)}" title="Resend verification email and copy link" style="padding: 4px 10px; font-size: 11.5px; color: #2563EB;">
-                  Resend &amp; Copy Link
+                  Resend Link
                 </button>
                 <button class="btn-secondary btn-revoke-invite" data-id="${admin.id}" data-name="${escapeHtml(name)}" title="Revoke this pending invitation" style="padding: 4px 10px; font-size: 11.5px; color: #EF4444;">
                   Revoke
                 </button>
               ` : `
+                <button class="btn-secondary btn-activate-admin" data-id="${admin.id}" data-name="${escapeHtml(name)}" data-email="${escapeHtml(email)}" title="Activate administrator" style="padding: 4px 10px; font-size: 11.5px; ${isDisabled ? 'color: #059669;' : 'display:none;'} font-weight: 600;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 3px; vertical-align: -1px;"><polyline points="20 6 9 17 4 12"/></svg>Activate
+                </button>
                 <button class="btn-secondary btn-toggle-status" data-id="${admin.id}" data-status="${status}" data-name="${escapeHtml(name)}" title="${isDisabled ? 'Enable Administrator' : 'Disable Administrator'}" style="padding: 4px 10px; font-size: 11.5px; ${isDisabled ? 'color: #059669;' : 'color: #EF4444;'}">
                   ${isDisabled ? "Enable" : "Disable"}
                 </button>
@@ -4186,6 +4192,16 @@
       }).join("");
 
       // Bind row actions
+      container.querySelectorAll(".btn-activate-admin").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          const name = btn.dataset.name;
+          const email = btn.dataset.email;
+          if (id) this.promptActivateAdmin(id, name, email, btn);
+        });
+      });
+
       container.querySelectorAll(".btn-resend-invite").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -4196,11 +4212,14 @@
       });
 
       container.querySelectorAll(".btn-revoke-invite").forEach(btn => {
-        btn.addEventListener("click", (e) => {
+        btn.addEventListener("click", async (e) => {
           e.stopPropagation();
           const id = btn.dataset.id;
           const name = btn.dataset.name;
-          if (id) this.updateAdminStatus(id, "DISABLED", name, btn);
+          if (!id) return;
+          if (confirm(`Revoke pending invitation for ${name || 'this administrator'}? The invitation link will be cancelled.`)) {
+            await this.updateAdminStatus(id, "DISABLED", name, btn);
+          }
         });
       });
 
@@ -4223,6 +4242,51 @@
           if (id) this.deleteAdmin(id, name, btn);
         });
       });
+    },
+
+    async promptActivateAdmin(id, name, email, buttonEl) {
+      const customPassword = prompt(
+        `Activate administrator "${name || 'User'}" ${email ? '(' + email + ')' : ''}?\n\n` +
+        `Enter an initial password (minimum 8 characters), or leave blank to automatically generate a secure temporary password:`,
+        ""
+      );
+      if (customPassword === null) return; // User cancelled
+
+      if (customPassword && customPassword.trim().length < 8) {
+        showToast("Password must be at least 8 characters long", "error");
+        return;
+      }
+
+      if (buttonEl) {
+        buttonEl.disabled = true;
+        buttonEl.textContent = "...";
+      }
+
+      try {
+        const payload = customPassword.trim() ? { password: customPassword.trim() } : {};
+        const res = await apiClient.request(`/api/admins/${id}/activate`, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        const tempPw = res?.temporaryPassword;
+        if (tempPw) {
+          navigator.clipboard?.writeText(tempPw).catch(() => {});
+          alert(`Administrator ${name || 'User'} is now ACTIVE!\n\nEmail: ${email || res?.email || ''}\nPassword: ${tempPw}\n\n(Password has been copied to your clipboard!)`);
+          showToast(`Admin ${name || 'User'} activated! Password copied to clipboard.`, "success");
+        } else {
+          showToast(`Admin ${name || 'User'} activated successfully!`, "success");
+        }
+        await this.loadAdmins(false);
+      } catch (err) {
+        console.error("Failed to activate admin:", err);
+        showToast(err.message || "Failed to activate administrator", "error");
+      } finally {
+        if (buttonEl) {
+          buttonEl.disabled = false;
+          buttonEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 3px; vertical-align: -1px;"><polyline points="20 6 9 17 4 12"/></svg>Activate`;
+        }
+      }
     },
 
     async resendVerification(id, name, buttonEl) {
@@ -4259,12 +4323,16 @@
       } finally {
         if (buttonEl) {
           buttonEl.disabled = false;
-          buttonEl.textContent = "Resend & Copy Link";
+          buttonEl.textContent = "Resend Link";
         }
       }
     },
 
     async updateAdminStatus(id, nextStatus, name, buttonEl) {
+      if (nextStatus === "ACTIVE") {
+        // Direct activation handles setting password and verified status cleanly
+        return this.promptActivateAdmin(id, name, "", buttonEl);
+      }
       if (buttonEl) {
         buttonEl.disabled = true;
         buttonEl.textContent = "...";
@@ -4279,6 +4347,7 @@
       } catch (err) {
         console.error("Failed to update admin status:", err);
         showToast(err.message || "Failed to update admin status", "error");
+      } finally {
         if (buttonEl) {
           buttonEl.disabled = false;
           buttonEl.textContent = nextStatus === "DISABLED" ? "Disable" : "Enable";
